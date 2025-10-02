@@ -65,10 +65,10 @@ export default function ComicCard({ comic }: ComicCardProps) {
         <div className="p-5">
           {/* Title and Language */}
           <div className="flex items-start justify-between gap-2 mb-3">
-            <h3 className="text-text-primary font-semibold text-lg group-hover:text-primary transition-colors line-clamp-1">
+            <h3 className="text-white font-semibold text-lg group-hover:text-primary transition-colors line-clamp-1">
               {comic.repoName}
             </h3>
-            <span className="text-xs bg-accent-light text-primary font-medium px-3 py-1 rounded-full whitespace-nowrap">
+            <span className="text-white text-xs bg-accent-light text-primary font-medium px-3 py-1 rounded-full whitespace-nowrap">
               {comic.language}
             </span>
           </div>
@@ -76,13 +76,13 @@ export default function ComicCard({ comic }: ComicCardProps) {
           {/* GitHub Stars */}
           <div className="flex items-center gap-1.5 mb-4">
             <Star className="w-4 h-4 text-[#FFA500] fill-[#FFA500]" />
-            <span className="text-sm text-text-secondary font-medium">
+            <span className="text-sm text-[#4e5968] font-medium">
               {comic.stars.toLocaleString()}
             </span>
           </div>
 
           {/* Engagement Metrics */}
-          <div className="flex items-center justify-between pt-4 border-t border-border-light">
+          <div className="flex items-center justify-between pt-4 border-t border-border-light text-[#4e5968]">
             <div className="flex items-center gap-5">
               <button
                 onClick={handleLike}
