@@ -12,24 +12,29 @@ interface ComicCardProps {
   comic: Comic;
 }
 
+// 코믹 카드 컴포넌트 - 개별 코믹 미리보기 표시
 export default function ComicCard({ comic }: ComicCardProps) {
   const dispatch = useAppDispatch();
   const savedComics = useAppSelector((state) => state.user.savedComics);
   const likedComics = useAppSelector((state) => state.user.likedComics);
 
+  // 현재 코믹의 저장 및 좋아요 상태 확인
   const isSaved = savedComics.includes(comic.id);
   const isLiked = likedComics.includes(comic.id);
 
+  // 저장 토글 핸들러
   const handleSave = (e: React.MouseEvent) => {
     e.preventDefault();
     dispatch(toggleSavedComic(comic.id));
   };
 
+  // 좋아요 토글 핸들러
   const handleLike = (e: React.MouseEvent) => {
     e.preventDefault();
     dispatch(toggleLikedComic(comic.id));
   };
 
+  // 공유 모달 열기 핸들러
   const handleShare = (e: React.MouseEvent) => {
     e.preventDefault();
     dispatch(openShareModal(comic.id));
@@ -38,7 +43,7 @@ export default function ComicCard({ comic }: ComicCardProps) {
   return (
     <Link href={`/comic/${comic.id}`}>
       <div className="group bg-surface border border-border rounded-2xl overflow-hidden hover:border-primary hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer">
-        {/* Comic Preview */}
+        {/* 코믹 미리보기 (처음 2개 패널) */}
         <div className="relative aspect-[3/2] bg-background-dark overflow-hidden">
           <div className="grid grid-cols-2 gap-1 h-full p-1">
             {comic.panels.slice(0, 2).map((panel, index) => (
@@ -54,6 +59,7 @@ export default function ComicCard({ comic }: ComicCardProps) {
               </div>
             ))}
           </div>
+          {/* NEW 배지 */}
           {comic.isNew && (
             <div className="absolute top-3 right-3 bg-success text-white text-xs font-semibold px-3 py-1.5 rounded-full shadow-lg animate-pulse">
               NEW
@@ -61,9 +67,9 @@ export default function ComicCard({ comic }: ComicCardProps) {
           )}
         </div>
 
-        {/* Content */}
+        {/* 콘텐츠 */}
         <div className="p-5">
-          {/* Title and Language */}
+          {/* 제목 및 언어 */}
           <div className="flex items-start justify-between gap-2 mb-3">
             <h3 className="text-white font-semibold text-lg group-hover:text-primary transition-colors line-clamp-1">
               {comic.repoName}
@@ -73,7 +79,7 @@ export default function ComicCard({ comic }: ComicCardProps) {
             </span>
           </div>
 
-          {/* GitHub Stars */}
+          {/* GitHub 별점 */}
           <div className="flex items-center gap-1.5 mb-4">
             <Star className="w-4 h-4 text-[#FFA500] fill-[#FFA500]" />
             <span className="text-sm text-[#4e5968] font-medium">
@@ -81,9 +87,10 @@ export default function ComicCard({ comic }: ComicCardProps) {
             </span>
           </div>
 
-          {/* Engagement Metrics */}
+          {/* 참여 지표 (좋아요, 공유, 저장) */}
           <div className="flex items-center justify-between pt-4 border-t border-border-light text-[#4e5968]">
             <div className="flex items-center gap-5">
+              {/* 좋아요 버튼 */}
               <button
                 onClick={handleLike}
                 className="flex items-center gap-1.5 text-sm text-text-secondary hover:text-primary transition-colors group/like"
@@ -91,12 +98,14 @@ export default function ComicCard({ comic }: ComicCardProps) {
                 <MessageCircle className="w-4 h-4 group-hover/like:scale-110 transition-transform" />
                 <span className="font-medium">{isLiked ? comic.likes + 1 : comic.likes}</span>
               </button>
+              {/* 공유 수 표시 */}
               <div className="flex items-center gap-1.5 text-sm text-text-secondary">
                 <Share2 className="w-4 h-4" />
                 <span className="font-medium">{comic.shares}</span>
               </div>
             </div>
 
+            {/* 공유 및 저장 버튼 */}
             <div className="flex items-center gap-1">
               <button
                 onClick={handleShare}

@@ -9,6 +9,7 @@ import {
 import { languages } from "@/lib/mockData";
 import { SortType, LanguageFilter } from "@/lib/types";
 
+// 필터 바 컴포넌트 - 언어 및 정렬 옵션 제공
 export default function FilterBar() {
   const dispatch = useAppDispatch();
   const languageFilter = useAppSelector((state) => state.comics.languageFilter);
@@ -16,7 +17,7 @@ export default function FilterBar() {
 
   return (
     <div className="flex items-center gap-3 mb-6">
-      {/* Language Filter */}
+      {/* 언어 필터 드롭다운 */}
       <div className="relative">
         <select
           value={languageFilter}
@@ -34,7 +35,7 @@ export default function FilterBar() {
         <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8B949E] pointer-events-none" />
       </div>
 
-      {/* Sort Filter */}
+      {/* 정렬 필터 드롭다운 */}
       <div className="relative">
         <select
           value={sortBy}

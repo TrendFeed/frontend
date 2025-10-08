@@ -3,26 +3,29 @@
 import { Search, Bell, Settings } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import { setSearchQuery } from "@/lib/redux/slices/comicsSlice";
-
+import { useRouter } from "next/navigation";
+// 헤더 컴포넌트 - 로고, 검색바, 액션 버튼 포함
 export default function Header() {
   const dispatch = useAppDispatch();
   const searchQuery = useAppSelector((state) => state.comics.searchQuery);
+  const router = useRouter();
+
+  const handleSettings = () => {
+        router.push("/settings");
+  };
 
   return (
     <header className="sticky top-0 z-50 bg-[#0D1117] border-b border-[#30363D]">
       <div className="max-w-7xl mx-auto px-4 py-4">
         <div className="flex items-center justify-between gap-4">
-          {/* Logo */}
+          {/* 로고 */}
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-[#58A6FF] to-[#3FB950] rounded-lg flex items-center justify-center font-bold text-white">
-              TF
-            </div>
-            <h1 className="text-xl font-bold text-white hidden sm:block">
+            <h1 className="text-3xl font-bold text-white hidden sm:block">
               TrendFeed
             </h1>
           </div>
 
-          {/* Search Bar */}
+          {/* 검색바 */}
           <div className="flex-1 max-w-md">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8B949E]" />
@@ -36,17 +39,18 @@ export default function Header() {
             </div>
           </div>
 
-          {/* Actions */}
+          {/* 액션 버튼 (알림, 설정) */}
           <div className="flex items-center gap-2">
             <button
-              className="p-2 hover:bg-[#161B22] rounded-lg transition-colors"
+              className="p-2 hover:bg-[#161B22] hover:cursor-pointer rounded-lg transition-colors"
               aria-label="Notifications"
             >
               <Bell className="w-5 h-5 text-[#8B949E] hover:text-[#C9D1D9]" />
             </button>
             <button
-              className="p-2 hover:bg-[#161B22] rounded-lg transition-colors"
+              className="p-2 hover:bg-[#161B22] hover:cursor-pointer rounded-lg transition-colors"
               aria-label="Settings"
+              onClick={handleSettings}
             >
               <Settings className="w-5 h-5 text-[#8B949E] hover:text-[#C9D1D9]" />
             </button>

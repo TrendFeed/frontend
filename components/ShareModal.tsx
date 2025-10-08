@@ -6,13 +6,16 @@ import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import { closeShareModal } from "@/lib/redux/slices/uiSlice";
 import { mockComics } from "@/lib/mockData";
 
+// 공유 모달 컴포넌트
 export default function ShareModal() {
   const dispatch = useAppDispatch();
+  // Redux 스토어에서 모달 상태 가져오기
   const { shareModalOpen, shareModalComicId } = useAppSelector(
     (state) => state.ui
   );
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState(false); // 링크 복사 상태
 
+  // 모달이 닫혀있거나 공유할 코믹이 없으면 렌더링하지 않음
   if (!shareModalOpen || !shareModalComicId) return null;
 
   const comic = mockComics.find((c) => c.id === shareModalComicId);
@@ -21,16 +24,18 @@ export default function ShareModal() {
   const shareUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/comic/${comic.id}`;
   const shareText = `Check out this comic about ${comic.repoName}!`;
 
+  // 링크를 클립보드에 복사하는 함수
   const handleCopyLink = async () => {
     try {
       await navigator.clipboard.writeText(shareUrl);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      setTimeout(() => setCopied(false), 2000); // 2초 후 복사 상태 초기화
     } catch (err) {
       console.error("Failed to copy:", err);
     }
   };
 
+  // 소셜 미디어 플랫폼으로 공유하는 함수
   const handleShare = (platform: "twitter" | "linkedin") => {
     let url = "";
     if (platform === "twitter") {
@@ -42,9 +47,10 @@ export default function ShareModal() {
         shareUrl
       )}`;
     }
-    window.open(url, "_blank", "width=600,height=400");
+    window.open(url, "_blank", "width=600,height=400"); // 새 창으로 열기
   };
 
+  // 모달 닫기 함수
   const handleClose = () => {
     dispatch(closeShareModal());
     setCopied(false);
@@ -52,16 +58,16 @@ export default function ShareModal() {
 
   return (
     <>
-      {/* Backdrop */}
+      {/* 배경 오버레이 (클릭 시 모달 닫기) */}
       <div
         className="fixed inset-0 bg-black/50 z-50"
         onClick={handleClose}
       />
 
-      {/* Modal */}
+      {/* 모달 */}
       <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-full max-w-md">
         <div className="bg-[#161B22] border border-[#30363D] rounded-lg shadow-xl">
-          {/* Header */}
+          {/* 모달 헤더 */}
           <div className="flex items-center justify-between p-6 border-b border-[#30363D]">
             <h2 className="text-xl font-bold text-[#C9D1D9]">
               Share Comic
@@ -75,9 +81,9 @@ export default function ShareModal() {
             </button>
           </div>
 
-          {/* Content */}
+          {/* 모달 내용 */}
           <div className="p-6">
-            {/* Comic Info */}
+            {/* 코믹 정보 */}
             <div className="mb-6">
               <h3 className="font-semibold text-[#C9D1D9] mb-1">
                 {comic.repoName}
@@ -87,7 +93,7 @@ export default function ShareModal() {
               </p>
             </div>
 
-            {/* Share Buttons */}
+            {/* 소셜 미디어 공유 버튼 */}
             <div className="space-y-3 mb-6">
               <button
                 onClick={() => handleShare("twitter")}
@@ -106,7 +112,7 @@ export default function ShareModal() {
               </button>
             </div>
 
-            {/* Copy Link */}
+            {/* 링크 복사 섹션 */}
             <div className="border-t border-[#30363D] pt-6">
               <label className="text-sm text-[#8B949E] mb-2 block">
                 Or copy link

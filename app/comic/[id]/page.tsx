@@ -10,17 +10,21 @@ import { mockComics } from "@/lib/mockData";
 import ComicCard from "@/components/ComicCard";
 import ShareModal from "@/components/ShareModal";
 
+// 코믹 상세 페이지 컴포넌트
 export default function ComicDetailPage() {
   const params = useParams();
   const router = useRouter();
   const dispatch = useAppDispatch();
   const savedComics = useAppSelector((state) => state.user.savedComics);
 
+  // URL 파라미터로 해당 코믹 찾기
   const comic = mockComics.find((c) => c.id === params.id);
+  // 같은 언어의 관련 코믹 3개 가져오기
   const relatedComics = mockComics.filter(
     (c) => c.language === comic?.language && c.id !== params.id
   ).slice(0, 3);
 
+  // 코믹을 찾을 수 없을 때 에러 페이지 표시
   if (!comic) {
     return (
       <div className="min-h-screen bg-[#0D1117] flex items-center justify-center">
@@ -37,13 +41,15 @@ export default function ComicDetailPage() {
     );
   }
 
+  // 현재 코믹이 저장되어 있는지 확인
   const isSaved = savedComics.includes(comic.id);
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
+      {/* 상단 고정 헤더 */}
       <header className="sticky top-0 z-50 bg-surface/80 backdrop-blur-md border-b border-border shadow-sm">
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
+          {/* 뒤로 가기 버튼 */}
           <button
             onClick={() => router.back()}
             className="flex items-center gap-2 text-text-secondary hover:text-primary transition-all hover:scale-105"
@@ -52,6 +58,7 @@ export default function ComicDetailPage() {
             <span className="hidden sm:inline font-medium">Back</span>
           </button>
 
+          {/* 공유 및 저장 버튼 */}
           <div className="flex items-center gap-2">
             <button
               onClick={() => dispatch(openShareModal(comic.id))}
@@ -77,9 +84,9 @@ export default function ComicDetailPage() {
         </div>
       </header>
 
-      {/* Main Content */}
+      {/* 메인 콘텐츠 */}
       <main className="max-w-4xl mx-auto px-4 py-8">
-        {/* Title Section */}
+        {/* 제목 섹션 */}
         <div className="mb-10">
           <div className="flex items-start justify-between gap-4 mb-4">
             <div>
@@ -104,7 +111,7 @@ export default function ComicDetailPage() {
           </div>
         </div>
 
-        {/* Comic Panels */}
+        {/* 코믹 패널 이미지 */}
         <div className="mb-10">
           <div className="space-y-5">
             {comic.panels.map((panel, index) => (
@@ -127,7 +134,7 @@ export default function ComicDetailPage() {
             ))}
           </div>
 
-          {/* Progress Indicator */}
+          {/* 진행 상태 표시 (패널 개수만큼 점으로 표시) */}
           <div className="flex justify-center gap-2 mt-8">
             {comic.panels.map((_, index) => (
               <div
@@ -138,7 +145,7 @@ export default function ComicDetailPage() {
           </div>
         </div>
 
-        {/* Key Insights */}
+        {/* 주요 인사이트 */}
         <div className="mb-8 bg-[#161B22] border border-[#30363D] rounded-lg p-6">
           <h2 className="text-xl font-bold text-[#C9D1D9] mb-4">
             Key Insights
@@ -153,7 +160,7 @@ export default function ComicDetailPage() {
           </ul>
         </div>
 
-        {/* Action Buttons */}
+        {/* 액션 버튼 (GitHub 보기, 다운로드) */}
         <div className="flex flex-col sm:flex-row gap-3 mb-12">
           <a
             href={comic.repoUrl}
@@ -170,7 +177,7 @@ export default function ComicDetailPage() {
           </button>
         </div>
 
-        {/* Related Comics */}
+        {/* 관련 코믹 (같은 언어) */}
         {relatedComics.length > 0 && (
           <div>
             <h2 className="text-2xl font-bold text-[#C9D1D9] mb-6">
@@ -185,6 +192,7 @@ export default function ComicDetailPage() {
         )}
       </main>
 
+      {/* 공유 모달 */}
       <ShareModal />
     </div>
   );
