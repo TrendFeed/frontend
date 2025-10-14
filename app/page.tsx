@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import Header from "@/components/Header";
 import TabNavigation from "@/components/TabNavigation";
 import FilterBar from "@/components/FilterBar";
@@ -9,11 +10,14 @@ import ShareModal from "@/components/ShareModal";
 import NewsletterModal from "@/components/NewsletterModal";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import { setComics } from "@/lib/redux/slices/comicsSlice";
+import { openNewsletterModal } from "@/lib/redux/slices/uiSlice";
 import { mockComics } from "@/lib/mockData";
 
 // 메인 홈 페이지 컴포넌트
 export default function Home() {
   const dispatch = useAppDispatch();
+  const searchParams = useSearchParams();
+
   // Redux 스토어에서 상태 가져오기
   const comics = useAppSelector((state) => state.comics.comics);
   const activeTab = useAppSelector((state) => state.comics.activeTab);
@@ -26,6 +30,14 @@ export default function Home() {
   useEffect(() => {
     dispatch(setComics(mockComics));
   }, [dispatch]);
+
+  // URL 파라미터에서 newsletter=open 확인하여 자동으로 모달 열기
+  useEffect(() => {
+    const newsletter = searchParams.get("newsletter");
+    if (newsletter === "open") {
+      dispatch(openNewsletterModal());
+    }
+  }, [searchParams, dispatch]);
 
   // 활성 탭, 언어, 검색어, 정렬 기준에 따라 코믹 필터링
   const filteredComics = comics
