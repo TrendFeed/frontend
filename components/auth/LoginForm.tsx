@@ -131,7 +131,7 @@ export default function LoginForm() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-[#58A6FF] hover:bg-[#4A96E6] text-white font-medium py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          className="w-full bg-[#58A6FF] hover:bg-[#4A96E6] hover:cursor-pointer text-white font-medium py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
           {loading ? (
             <>
@@ -159,7 +159,7 @@ export default function LoginForm() {
         <button
             onClick={handleGoogleLogin}
           disabled={loading}
-          className="w-full bg-white hover:bg-gray-100 text-gray-900 font-medium py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          className="w-full bg-white hover:bg-gray-100 hover:cursor-pointer text-gray-900 font-medium py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24">
             <path
@@ -185,7 +185,7 @@ export default function LoginForm() {
         <button
           onClick={handleGitHubLogin}
           disabled={loading}
-          className="w-full bg-[#161B22] hover:bg-[#1C2128] border border-[#30363D] text-[#C9D1D9] font-medium py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          className="w-full bg-[#161B22] hover:bg-[#1C2128] hover:cursor-pointer border border-[#30363D] text-[#C9D1D9] font-medium py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
           <Github className="w-5 h-5" />
         </button>

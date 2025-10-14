@@ -6,6 +6,7 @@ import TabNavigation from "@/components/TabNavigation";
 import FilterBar from "@/components/FilterBar";
 import ComicCard from "@/components/ComicCard";
 import ShareModal from "@/components/ShareModal";
+import NewsletterModal from "@/components/NewsletterModal";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import { setComics } from "@/lib/redux/slices/comicsSlice";
 import { mockComics } from "@/lib/mockData";
@@ -89,6 +90,9 @@ export default function Home() {
 
       {/* 공유 모달 */}
       <ShareModal />
+
+      {/* 뉴스레터 모달 */}
+      <NewsletterModal />
     </div>
   );
 }

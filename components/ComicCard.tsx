@@ -93,7 +93,7 @@ export default function ComicCard({ comic }: ComicCardProps) {
               {/* 좋아요 버튼 */}
               <button
                 onClick={handleLike}
-                className="flex items-center gap-1.5 text-sm text-text-secondary hover:text-primary transition-colors group/like"
+                className="flex items-center gap-1.5 text-sm text-text-secondary hover:text-primary hover:cursor-pointer transition-colors group/like"
               >
                 <MessageCircle className="w-4 h-4 group-hover/like:scale-110 transition-transform" />
                 <span className="font-medium">{isLiked ? comic.likes + 1 : comic.likes}</span>
@@ -109,14 +109,14 @@ export default function ComicCard({ comic }: ComicCardProps) {
             <div className="flex items-center gap-1">
               <button
                 onClick={handleShare}
-                className="p-2 hover:bg-accent-light rounded-lg transition-all hover:scale-110"
+                className="p-2 hover:bg-accent-light hover:cursor-pointer rounded-lg transition-all hover:scale-110"
                 aria-label="Share"
               >
                 <Share2 className="w-4 h-4 text-text-secondary hover:text-primary" />
               </button>
               <button
                 onClick={handleSave}
-                className="p-2 hover:bg-accent-light rounded-lg transition-all hover:scale-110"
+                className="p-2 hover:bg-accent-light hover:cursor-pointer rounded-lg transition-all hover:scale-110"
                 aria-label={isSaved ? "Unsave" : "Save"}
               >
                 <Bookmark

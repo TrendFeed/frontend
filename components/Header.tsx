@@ -1,8 +1,9 @@
 "use client";
 
-import { Search, Bell, Settings } from "lucide-react";
+import { Search, Bell, Settings, Mail } from "lucide-react";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import { setSearchQuery } from "@/lib/redux/slices/comicsSlice";
+import { openNewsletterModal } from "@/lib/redux/slices/uiSlice";
 import { useRouter } from "next/navigation";
 // 헤더 컴포넌트 - 로고, 검색바, 액션 버튼 포함
 export default function Header() {
@@ -11,7 +12,11 @@ export default function Header() {
   const router = useRouter();
 
   const handleSettings = () => {
-        router.push("/settings");
+    router.push("/settings");
+  };
+
+  const handleNewsletter = () => {
+    dispatch(openNewsletterModal());
   };
 
   return (
@@ -39,8 +44,15 @@ export default function Header() {
             </div>
           </div>
 
-          {/* 액션 버튼 (알림, 설정) */}
+          {/* 액션 버튼 (뉴스레터, 알림, 설정) */}
           <div className="flex items-center gap-2">
+            <button
+              className="p-2 hover:bg-[#161B22] hover:cursor-pointer rounded-lg transition-colors"
+              aria-label="Newsletter"
+              onClick={handleNewsletter}
+            >
+              <Mail className="w-5 h-5 text-[#8B949E] hover:text-[#C9D1D9]" />
+            </button>
             <button
               className="p-2 hover:bg-[#161B22] hover:cursor-pointer rounded-lg transition-colors"
               aria-label="Notifications"

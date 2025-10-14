@@ -74,7 +74,7 @@ export default function ShareModal() {
             </h2>
             <button
               onClick={handleClose}
-              className="p-1 hover:bg-[#0D1117] rounded transition-colors"
+              className="p-1 hover:bg-[#0D1117] hover:cursor-pointer rounded transition-colors"
               aria-label="Close"
             >
               <X className="w-5 h-5 text-[#8B949E]" />
@@ -97,7 +97,7 @@ export default function ShareModal() {
             <div className="space-y-3 mb-6">
               <button
                 onClick={() => handleShare("twitter")}
-                className="w-full flex items-center gap-3 bg-[#1DA1F2] hover:bg-[#1A8CD8] text-white px-4 py-3 rounded-lg transition-colors"
+                className="w-full flex items-center gap-3 bg-[#1DA1F2] hover:bg-[#1A8CD8] hover:cursor-pointer text-white px-4 py-3 rounded-lg transition-colors"
               >
                 <Twitter className="w-5 h-5" />
                 <span className="font-medium">Share on Twitter</span>
@@ -105,7 +105,7 @@ export default function ShareModal() {
 
               <button
                 onClick={() => handleShare("linkedin")}
-                className="w-full flex items-center gap-3 bg-[#0A66C2] hover:bg-[#004182] text-white px-4 py-3 rounded-lg transition-colors"
+                className="w-full flex items-center gap-3 bg-[#0A66C2] hover:bg-[#004182] hover:cursor-pointer text-white px-4 py-3 rounded-lg transition-colors"
               >
                 <Linkedin className="w-5 h-5" />
                 <span className="font-medium">Share on LinkedIn</span>
@@ -126,7 +126,7 @@ export default function ShareModal() {
                 />
                 <button
                   onClick={handleCopyLink}
-                  className="flex items-center gap-2 bg-[#58A6FF] hover:bg-[#4A96E6] text-white px-4 py-2 rounded-lg transition-colors font-medium"
+                  className="flex items-center gap-2 bg-[#58A6FF] hover:bg-[#4A96E6] hover:cursor-pointer text-white px-4 py-2 rounded-lg transition-colors font-medium"
                 >
                   {copied ? (
                     <>

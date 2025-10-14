@@ -1,14 +1,16 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Share2, ExternalLink, Download, Bookmark } from "lucide-react";
+import { ArrowLeft, Share2, ExternalLink, Download, Bookmark, Mail } from "lucide-react";
 import Image from "next/image";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import { toggleSavedComic } from "@/lib/redux/slices/userSlice";
-import { openShareModal } from "@/lib/redux/slices/uiSlice";
+import { openShareModal, openNewsletterModal } from "@/lib/redux/slices/uiSlice";
 import { mockComics } from "@/lib/mockData";
 import ComicCard from "@/components/ComicCard";
 import ShareModal from "@/components/ShareModal";
+import NewsletterModal from "@/components/NewsletterModal";
+import { Star } from "lucide-react";
 
 // 코믹 상세 페이지 컴포넌트
 export default function ComicDetailPage() {
@@ -32,7 +34,7 @@ export default function ComicDetailPage() {
           <h1 className="text-2xl font-bold text-[#C9D1D9] mb-2">Comic Not Found</h1>
           <button
             onClick={() => router.push("/")}
-            className="text-[#58A6FF] hover:underline"
+            className="text-[#58A6FF] hover:underline hover:cursor-pointer"
           >
             Return to Home
           </button>
@@ -45,38 +47,45 @@ export default function ComicDetailPage() {
   const isSaved = savedComics.includes(comic.id);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-[#0D1117]">
       {/* 상단 고정 헤더 */}
-      <header className="sticky top-0 z-50 bg-surface/80 backdrop-blur-md border-b border-border shadow-sm">
+      <header className="sticky top-0 z-50 bg-[#0D1117]/80 backdrop-blur-md border-b border-[#30363D] shadow-sm">
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
           {/* 뒤로 가기 버튼 */}
           <button
             onClick={() => router.back()}
-            className="flex items-center gap-2 text-text-secondary hover:text-primary transition-all hover:scale-105"
+            className="flex items-center gap-2 text-[#8B949E] hover:text-[#58A6FF] transition-all hover:scale-105 hover:cursor-pointer"
           >
             <ArrowLeft className="w-5 h-5" />
             <span className="hidden sm:inline font-medium">Back</span>
           </button>
 
-          {/* 공유 및 저장 버튼 */}
+          {/* 뉴스레터, 공유 및 저장 버튼 */}
           <div className="flex items-center gap-2">
             <button
+              onClick={() => dispatch(openNewsletterModal())}
+              className="p-2.5 hover:bg-[#161B22] rounded-xl transition-all hover:scale-110 hover:cursor-pointer"
+              aria-label="Newsletter"
+            >
+              <Mail className="w-5 h-5 text-[#8B949E] hover:text-[#58A6FF]" />
+            </button>
+            <button
               onClick={() => dispatch(openShareModal(comic.id))}
-              className="p-2.5 hover:bg-accent-light rounded-xl transition-all hover:scale-110"
+              className="p-2.5 hover:bg-[#161B22] rounded-xl transition-all hover:scale-110 hover:cursor-pointer"
               aria-label="Share"
             >
-              <Share2 className="w-5 h-5 text-text-secondary hover:text-primary" />
+              <Share2 className="w-5 h-5 text-[#8B949E] hover:text-[#58A6FF]" />
             </button>
             <button
               onClick={() => dispatch(toggleSavedComic(comic.id))}
-              className="p-2.5 hover:bg-accent-light rounded-xl transition-all hover:scale-110"
+              className="p-2.5 hover:bg-[#161B22] rounded-xl transition-all hover:scale-110 hover:cursor-pointer"
               aria-label={isSaved ? "Unsave" : "Save"}
             >
               <Bookmark
                 className={`w-5 h-5 ${
                   isSaved
-                    ? "text-primary fill-primary"
-                    : "text-text-secondary hover:text-primary"
+                    ? "text-[#58A6FF] fill-[#58A6FF]"
+                    : "text-[#8B949E] hover:text-[#58A6FF]"
                 }`}
               />
             </button>
@@ -90,19 +99,19 @@ export default function ComicDetailPage() {
         <div className="mb-10">
           <div className="flex items-start justify-between gap-4 mb-4">
             <div>
-              <h1 className="text-4xl font-bold text-text-primary mb-3">
+              <h1 className="text-4xl font-bold text-[#C9D1D9] mb-3">
                 {comic.repoName}
               </h1>
               <div className="flex items-center gap-3 flex-wrap">
-                <span className="text-sm bg-accent-light text-primary font-semibold px-4 py-1.5 rounded-full">
+                <span className="text-sm bg-[#58A6FF]/10 text-[#58A6FF] font-semibold px-4 py-1.5 rounded-full">
                   {comic.language}
                 </span>
-                <span className="text-text-secondary text-sm font-medium flex items-center gap-1">
+                <span className="text-[#8B949E] text-sm font-medium flex items-center gap-1">
                   <Star className="w-4 h-4 text-[#FFA500] fill-[#FFA500]" />
                   {comic.stars.toLocaleString()} stars
                 </span>
                 {comic.isNew && (
-                  <span className="bg-success text-white text-xs font-semibold px-3 py-1.5 rounded-full shadow-md animate-pulse">
+                  <span className="bg-[#3FB950] text-white text-xs font-semibold px-3 py-1.5 rounded-full shadow-md animate-pulse">
                     NEW
                   </span>
                 )}
@@ -117,19 +126,15 @@ export default function ComicDetailPage() {
             {comic.panels.map((panel, index) => (
               <div
                 key={index}
-                className="group/panel relative aspect-[3/2] bg-surface rounded-2xl overflow-hidden border border-border hover:border-primary shadow-md hover:shadow-2xl transition-all duration-300 hover:scale-[1.02]"
+                className="group/panel relative aspect-[3/2] bg-[#161B22] rounded-2xl overflow-hidden border border-[#30363D] hover:border-[#58A6FF] shadow-md hover:shadow-2xl"
               >
                 <Image
                   src={panel}
                   alt={`${comic.repoName} panel ${index + 1}`}
                   fill
-                  className="object-cover transform group-hover/panel:scale-105 transition-transform duration-500 ease-out"
+                  className="object-cover"
                   unoptimized
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent opacity-0 group-hover/panel:opacity-100 transition-opacity duration-300" />
-                <div className="absolute bottom-4 right-4 bg-surface/90 backdrop-blur-sm text-text-secondary text-xs font-semibold px-3 py-1.5 rounded-full opacity-0 group-hover/panel:opacity-100 transition-opacity duration-300">
-                  Panel {index + 1}
-                </div>
               </div>
             ))}
           </div>
@@ -139,7 +144,7 @@ export default function ComicDetailPage() {
             {comic.panels.map((_, index) => (
               <div
                 key={index}
-                className="w-2.5 h-2.5 rounded-full bg-primary shadow-sm hover:scale-125 transition-transform cursor-pointer"
+                className="w-2.5 h-2.5 rounded-full bg-[#58A6FF] shadow-sm hover:scale-125 transition-transform cursor-pointer"
               />
             ))}
           </div>
@@ -166,12 +171,12 @@ export default function ComicDetailPage() {
             href={comic.repoUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 bg-[#58A6FF] text-white px-6 py-3 rounded-lg hover:bg-[#4A96E6] transition-colors font-medium"
+            className="flex items-center justify-center gap-2 bg-[#58A6FF] text-white px-6 py-3 rounded-lg hover:bg-[#4A96E6] hover:cursor-pointer transition-colors font-medium"
           >
             <ExternalLink className="w-5 h-5" />
             View on GitHub
           </a>
-          <button className="flex items-center justify-center gap-2 bg-[#161B22] text-[#C9D1D9] border border-[#30363D] px-6 py-3 rounded-lg hover:border-[#58A6FF] transition-colors font-medium">
+          <button className="flex items-center justify-center gap-2 bg-[#161B22] text-[#C9D1D9] border border-[#30363D] px-6 py-3 rounded-lg hover:border-[#58A6FF] hover:cursor-pointer transition-colors font-medium">
             <Download className="w-5 h-5" />
             Download Comic
           </button>
@@ -194,6 +199,9 @@ export default function ComicDetailPage() {
 
       {/* 공유 모달 */}
       <ShareModal />
+
+      {/* 뉴스레터 모달 */}
+      <NewsletterModal />
     </div>
   );
 }

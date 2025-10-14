@@ -43,7 +43,7 @@ export default function SettingsPage() {
         <div className="max-w-4xl mx-auto px-4 py-4">
           <button
             onClick={() => router.back()}
-            className="flex items-center gap-2 text-[#8B949E] hover:text-[#C9D1D9] transition-colors"
+            className="flex items-center gap-2 text-[#8B949E] hover:text-[#C9D1D9] hover:cursor-pointer transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
             <span>Back</span>
@@ -122,7 +122,7 @@ export default function SettingsPage() {
 
           <button
             onClick={handleLogout}
-            className="flex items-center gap-3 w-full bg-red-500/10 hover:bg-red-500/20 border border-red-500/50 text-red-500 font-medium px-4 py-3 rounded-lg transition-colors"
+            className="flex items-center gap-3 w-full bg-red-500/10 hover:bg-red-500/20 hover:cursor-pointer border border-red-500/50 text-red-500 font-medium px-4 py-3 rounded-lg transition-colors"
           >
             <LogOut className="w-5 h-5" />
             <span>Sign Out</span>

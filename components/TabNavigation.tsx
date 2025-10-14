@@ -22,10 +22,10 @@ export default function TabNavigation() {
         <button
           key={tab.id}
           onClick={() => dispatch(setActiveTab(tab.id))}
-          className={`px-4 py-3 text-sm font-medium transition-colors relative ${
+          className={`px-4 py-3 text-sm font-medium transition-colors relative hover:cursor-pointer ${
             activeTab === tab.id
               ? "text-[#58A6FF]"
-              : "text-[#8B949E] hover:text-[#C9D1D9] cursor-pointer"
+              : "text-[#8B949E] hover:text-[#C9D1D9]"
           }`}
         >
           {tab.label}

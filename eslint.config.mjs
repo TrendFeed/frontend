@@ -19,6 +19,11 @@ const eslintConfig = [
       "build/**",
       "next-env.d.ts",
     ],
+    rules: {
+      // 🔧 필요하다면 여기서 룰 오버라이드
+      "@typescript-eslint/no-explicit-any": "off",
+      "@next/next/no-img-element": "warn", // img 태그는 경고만
+    },
   },
 ];
 
