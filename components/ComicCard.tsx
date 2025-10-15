@@ -1,6 +1,6 @@
 "use client";
 
-import { Star, MessageCircle, Share2, Bookmark } from "lucide-react";
+import { MessageCircle, Share2, Bookmark } from "lucide-react";
 import { Comic } from "@/lib/types";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import { toggleSavedComic, toggleLikedComic } from "@/lib/redux/slices/userSlice";
@@ -81,7 +81,13 @@ export default function ComicCard({ comic }: ComicCardProps) {
 
           {/* GitHub 별점 */}
           <div className="flex items-center gap-1.5 mb-4">
-            <Star className="w-4 h-4 text-[#FFA500] fill-[#FFA500]" />
+            <Image
+              src="/blue_star.png"
+              alt="star"
+              width={16}
+              height={16}
+              className="w-4 h-4"
+            />
             <span className="text-sm text-[#4e5968] font-medium">
               {comic.stars.toLocaleString()}
             </span>

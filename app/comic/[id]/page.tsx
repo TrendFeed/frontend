@@ -10,7 +10,6 @@ import { mockComics } from "@/lib/mockData";
 import ComicCard from "@/components/ComicCard";
 import ShareModal from "@/components/ShareModal";
 import NewsletterModal from "@/components/NewsletterModal";
-import { Star } from "lucide-react";
 
 // 코믹 상세 페이지 컴포넌트
 export default function ComicDetailPage() {
@@ -107,7 +106,13 @@ export default function ComicDetailPage() {
                   {comic.language}
                 </span>
                 <span className="text-[#8B949E] text-sm font-medium flex items-center gap-1">
-                  <Star className="w-4 h-4 text-[#FFA500] fill-[#FFA500]" />
+                  <Image
+                    src="/blue_star.png"
+                    alt="star"
+                    width={16}
+                    height={16}
+                    className="w-4 h-4"
+                  />
                   {comic.stars.toLocaleString()} stars
                 </span>
                 {comic.isNew && (

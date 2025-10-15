@@ -7,6 +7,13 @@ import { AuthProvider } from "@/lib/contexts/AuthContext";
 export const metadata: Metadata = {
   title: "TrendFeed - GitHub Trending as Comics",
   description: "Discover GitHub trending repositories as comic-style visual content",
+  icons: {
+    icon: [
+      { url: "/favicon.png", type: "image/png" },
+      { url: "/blue_star.png", type: "image/png" }
+    ],
+    apple: "/blue_star.png",
+  },
 };
 
 // 루트 레이아웃 컴포넌트 - 모든 페이지에 공통적으로 적용되는 레이아웃
