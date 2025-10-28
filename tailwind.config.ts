@@ -33,6 +33,7 @@ const config: Config = {
         "scale-in": "scaleIn 0.2s ease-out",
         "slide-up": "slideUp 0.3s ease-out",
         "fade-in": "fadeIn 0.3s ease-out",
+        wiggle: "wiggle 0.6s ease-in-out",
       },
       keyframes: {
         scaleIn: {
@@ -46,6 +47,10 @@ const config: Config = {
         fadeIn: {
           "0%": { opacity: "0" },
           "100%": { opacity: "1" },
+        },
+        wiggle: {
+          "0%, 100%": { transform: "rotate(-2deg) scale(1.02)" },
+          "50%": { transform: "rotate(2deg) scale(1.05)" },
         },
       },
     },

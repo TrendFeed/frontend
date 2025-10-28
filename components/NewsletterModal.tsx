@@ -148,7 +148,7 @@ export default function NewsletterModal() {
             {/* 설명 섹션 */}
             <div className="mb-6 bg-[#0D1117] border border-[#30363D] rounded-lg p-4">
               <h3 className="text-sm font-semibold text-[#C9D1D9] mb-2">
-                What you'll receive:
+                What you&apos;ll receive:
               </h3>
               <ul className="space-y-2 text-sm text-[#8B949E]">
                 <li className="flex items-start gap-2">

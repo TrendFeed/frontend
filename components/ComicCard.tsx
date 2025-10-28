@@ -12,131 +12,132 @@ interface ComicCardProps {
   comic: Comic;
 }
 
-// 코믹 카드 컴포넌트 - 개별 코믹 미리보기 표시
 export default function ComicCard({ comic }: ComicCardProps) {
   const dispatch = useAppDispatch();
   const savedComics = useAppSelector((state) => state.user.savedComics);
   const likedComics = useAppSelector((state) => state.user.likedComics);
 
-  // 현재 코믹의 저장 및 좋아요 상태 확인
   const isSaved = savedComics.includes(comic.id);
   const isLiked = likedComics.includes(comic.id);
 
-  // 저장 토글 핸들러
   const handleSave = (e: React.MouseEvent) => {
     e.preventDefault();
     dispatch(toggleSavedComic(comic.id));
   };
 
-  // 좋아요 토글 핸들러
   const handleLike = (e: React.MouseEvent) => {
     e.preventDefault();
     dispatch(toggleLikedComic(comic.id));
   };
 
-  // 공유 모달 열기 핸들러
   const handleShare = (e: React.MouseEvent) => {
     e.preventDefault();
     dispatch(openShareModal(comic.id));
   };
 
-  return (
-    <Link href={`/comic/${comic.id}`}>
-      <div className="group bg-surface border border-border rounded-2xl overflow-hidden hover:border-primary hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer">
-        {/* 코믹 미리보기 (처음 2개 패널) */}
-        <div className="relative aspect-[3/2] bg-background-dark overflow-hidden">
-          <div className="grid grid-cols-2 gap-1 h-full p-1">
-            {comic.panels.slice(0, 2).map((panel, index) => (
-              <div key={index} className="relative rounded-lg overflow-hidden">
-                <Image
-                  src={panel}
-                  alt={`${comic.repoName} panel ${index + 1}`}
-                  fill
-                  className="object-cover transform group-hover:scale-110 transition-transform duration-500 ease-out"
-                  unoptimized
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              </div>
-            ))}
-          </div>
-          {/* NEW 배지 */}
-          {comic.isNew && (
-            <div className="absolute top-3 right-3 bg-success text-white text-xs font-semibold px-3 py-1.5 rounded-full shadow-lg animate-pulse">
-              NEW
-            </div>
-          )}
-        </div>
+  const previewPanel = comic.panels[0];
 
-        {/* 콘텐츠 */}
-        <div className="p-5">
-          {/* 제목 및 언어 */}
-          <div className="flex items-start justify-between gap-2 mb-3">
-            <h3 className="text-white font-semibold text-lg group-hover:text-primary transition-colors line-clamp-1">
-              {comic.repoName}
-            </h3>
-            <span className="text-white text-xs bg-accent-light text-primary font-medium px-3 py-1 rounded-full whitespace-nowrap">
+  return (
+      <Link href={`/comic/${comic.id}`}>
+        <div className="
+  comic-card group/item
+  bg-[#141A22] border border-border rounded-2xl overflow-hidden
+  transition-all duration-[500ms] ease-in-out
+  hover:-translate-y-2 hover:scale-[1.08]
+  hover:shadow-[0_0_40px_-10px_rgba(60,100,180,0.25)]
+  hover:bg-[#233045]
+">
+          {/* 미리보기 */}
+          <div className="relative aspect-[3/2] bg-[#0D1117] overflow-hidden">
+            {previewPanel ? (
+                <Image
+                    src={previewPanel}
+                    alt={`${comic.repoName} preview panel`}
+                    fill
+                    className="object-cover transition-transform duration-[2200ms] ease-[cubic-bezier(0.19,1,0.22,1)] group-hover/item:scale-110"
+                    unoptimized
+                />
+            ) : (
+                <div className="flex h-full items-center justify-center text-[#9CA3AF] text-sm">
+                  Preview coming soon
+                </div>
+            )}
+
+            {comic.isNew && (
+                <div
+                    className="absolute top-3 right-3 bg-green-500 text-white text-xs font-semibold px-3 py-1.5 rounded-full shadow-lg animate-pulse">
+                  NEW
+                </div>
+            )}
+          </div>
+
+          {/* 콘텐츠 */}
+          <div className="relative z-10 p-5 transition-colors duration-[2200ms] ease-[cubic-bezier(0.22,1,0.36,1)]">
+            <div className="flex items-start justify-between gap-2 mb-3">
+              <h3 className="font-semibold text-[1.05rem] text-gray-100 group-hover/item:text-blue-50 transition-colors duration-[2200ms] ease-[cubic-bezier(0.22,1,0.36,1)]">
+                {comic.repoName}
+              </h3>
+              <span
+                  className="text-xs bg-[#243447] text-blue-300 font-medium px-3 py-1 rounded-full whitespace-nowrap transition-colors duration-[2200ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/item:bg-blue-600 group-hover/item:text-white">
               {comic.language}
             </span>
-          </div>
-
-          {/* GitHub 별점 */}
-          <div className="flex items-center gap-1.5 mb-4">
-            <Image
-              src="/blue_star.png"
-              alt="star"
-              width={16}
-              height={16}
-              className="w-4 h-4"
-            />
-            <span className="text-sm text-[#4e5968] font-medium">
-              {comic.stars.toLocaleString()}
-            </span>
-          </div>
-
-          {/* 참여 지표 (좋아요, 공유, 저장) */}
-          <div className="flex items-center justify-between pt-4 border-t border-border-light text-[#4e5968]">
-            <div className="flex items-center gap-5">
-              {/* 좋아요 버튼 */}
-              <button
-                onClick={handleLike}
-                className="flex items-center gap-1.5 text-sm text-text-secondary hover:text-primary hover:cursor-pointer transition-colors group/like"
-              >
-                <MessageCircle className="w-4 h-4 group-hover/like:scale-110 transition-transform" />
-                <span className="font-medium">{isLiked ? comic.likes + 1 : comic.likes}</span>
-              </button>
-              {/* 공유 수 표시 */}
-              <div className="flex items-center gap-1.5 text-sm text-text-secondary">
-                <Share2 className="w-4 h-4" />
-                <span className="font-medium">{comic.shares}</span>
-              </div>
             </div>
 
-            {/* 공유 및 저장 버튼 */}
-            <div className="flex items-center gap-1">
-              <button
-                onClick={handleShare}
-                className="p-2 hover:bg-accent-light hover:cursor-pointer rounded-lg transition-all hover:scale-110"
-                aria-label="Share"
-              >
-                <Share2 className="w-4 h-4 text-text-secondary hover:text-primary" />
-              </button>
-              <button
-                onClick={handleSave}
-                className="p-2 hover:bg-accent-light hover:cursor-pointer rounded-lg transition-all hover:scale-110"
-                aria-label={isSaved ? "Unsave" : "Save"}
-              >
-                <Bookmark
-                  className={`w-4 h-4 ${
-                    isSaved
-                      ? "text-primary fill-primary"
-                      : "text-text-secondary hover:text-primary"
-                  }`}
-                />
-              </button>
+            <div className="flex items-center gap-1.5 mb-4">
+              <Image
+                  src="/blue_star.png"
+                  alt="star"
+                  width={16}
+                  height={16}
+                  className="w-4 h-4"
+              />
+              <span
+                  className="text-sm text-gray-400 font-medium group-hover/item:text-blue-100 transition-colors duration-[2200ms] ease-[cubic-bezier(0.22,1,0.36,1)]">
+              {comic.stars.toLocaleString()}
+            </span>
+            </div>
+
+            <div
+                className="flex items-center justify-between pt-4 border-t border-border-light text-gray-400 group-hover/item:text-blue-100 transition-colors duration-[2200ms] ease-[cubic-bezier(0.22,1,0.36,1)]">
+              <div className="flex items-center gap-5">
+                <button
+                    onClick={handleLike}
+                    className="flex items-center gap-1.5 text-sm transition-transform duration-[2000ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:scale-110"
+                >
+                  <MessageCircle className="w-4 h-4"/>
+                  <span>{isLiked ? comic.likes + 1 : comic.likes}</span>
+                </button>
+                <div className="flex items-center gap-1.5 text-sm">
+                  <Share2 className="w-4 h-4"/>
+                  <span>{comic.shares}</span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-1">
+                <button
+                    onClick={handleShare}
+                    className="p-2 rounded-lg transition-all duration-[2000ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:scale-110 hover:bg-[#1f3a5f]"
+                    aria-label="Share"
+                >
+                  <Share2 className="w-4 h-4"/>
+                </button>
+                <button
+                    onClick={handleSave}
+                    className="p-2 rounded-lg transition-all duration-[2000ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:scale-110 hover:bg-[#1f3a5f]"
+                    aria-label={isSaved ? "Unsave" : "Save"}
+                >
+                  <Bookmark
+                      className={`w-4 h-4 ${
+                          isSaved
+                              ? "text-blue-300 fill-blue-300"
+                              : "text-gray-400 hover:text-blue-200"
+                      }`}
+                  />
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </Link>
+      </Link>
   );
 }
