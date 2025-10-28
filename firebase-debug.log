@@ -1,0 +1,80 @@
+[debug] [2025-10-28T06:08:39.472Z] ----------------------------------------------------------------------
+[debug] [2025-10-28T06:08:39.478Z] Command:       /Users/Ruffles/.nvm/versions/node/v20.18.1/bin/node /Users/Ruffles/.nvm/versions/node/v20.18.1/bin/firebase deploy
+[debug] [2025-10-28T06:08:39.479Z] CLI Version:   14.19.0
+[debug] [2025-10-28T06:08:39.479Z] Platform:      darwin
+[debug] [2025-10-28T06:08:39.479Z] Node Version:  v20.18.1
+[debug] [2025-10-28T06:08:39.479Z] Time:          Tue Oct 28 2025 15:08:39 GMT+0900 (Korean Standard Time)
+[debug] [2025-10-28T06:08:39.479Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2025-10-28T06:08:39.731Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2025-10-28T06:08:39.732Z] > authorizing via signed-in user (20011211s@gmail.com)
+[debug] [2025-10-28T06:08:39.732Z] [iam] checking project trendfeed-cb56b for permissions ["firebase.projects.get","firebasehosting.sites.update"]
+[debug] [2025-10-28T06:08:39.733Z] Checked if tokens are valid: true, expires at: 1761634466486
+[debug] [2025-10-28T06:08:39.733Z] Checked if tokens are valid: true, expires at: 1761634466486
+[debug] [2025-10-28T06:08:39.734Z] >>> [apiv2][query] POST https://cloudresourcemanager.googleapis.com/v1/projects/trendfeed-cb56b:testIamPermissions [none]
+[debug] [2025-10-28T06:08:39.734Z] >>> [apiv2][(partial)header] POST https://cloudresourcemanager.googleapis.com/v1/projects/trendfeed-cb56b:testIamPermissions x-goog-quota-user=projects/trendfeed-cb56b
+[debug] [2025-10-28T06:08:39.734Z] >>> [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/trendfeed-cb56b:testIamPermissions {"permissions":["firebase.projects.get","firebasehosting.sites.update"]}
+[debug] [2025-10-28T06:08:40.061Z] <<< [apiv2][status] POST https://cloudresourcemanager.googleapis.com/v1/projects/trendfeed-cb56b:testIamPermissions 200
+[debug] [2025-10-28T06:08:40.061Z] <<< [apiv2][body] POST https://cloudresourcemanager.googleapis.com/v1/projects/trendfeed-cb56b:testIamPermissions {"permissions":["firebase.projects.get","firebasehosting.sites.update"]}
+[debug] [2025-10-28T06:08:40.062Z] Checked if tokens are valid: true, expires at: 1761634466486
+[debug] [2025-10-28T06:08:40.062Z] Checked if tokens are valid: true, expires at: 1761634466486
+[debug] [2025-10-28T06:08:40.062Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/trendfeed-cb56b [none]
+[debug] [2025-10-28T06:08:40.696Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/trendfeed-cb56b 200
+[debug] [2025-10-28T06:08:40.696Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/trendfeed-cb56b {"projectId":"trendfeed-cb56b","projectNumber":"441428948783","displayName":"TrendFeed","name":"projects/trendfeed-cb56b","resources":{"hostingSite":"trendfeed-cb56b"},"state":"ACTIVE","etag":"1_60062174-c034-41cb-bd20-d00b5085425c"}
+[debug] [2025-10-28T06:08:42.478Z] Checked if tokens are valid: true, expires at: 1761634466486
+[debug] [2025-10-28T06:08:42.478Z] Checked if tokens are valid: true, expires at: 1761634466486
+[debug] [2025-10-28T06:08:42.479Z] >>> [apiv2][query] GET https://firebasehosting.googleapis.com/v1beta1/projects/trendfeed-cb56b/sites pageToken=&pageSize=10
+[debug] [2025-10-28T06:08:43.665Z] <<< [apiv2][status] GET https://firebasehosting.googleapis.com/v1beta1/projects/trendfeed-cb56b/sites 200
+[debug] [2025-10-28T06:08:43.666Z] <<< [apiv2][body] GET https://firebasehosting.googleapis.com/v1beta1/projects/trendfeed-cb56b/sites {"sites":[{"name":"projects/trendfeed-cb56b/sites/trendfeed-cb56b","defaultUrl":"https://trendfeed-cb56b.web.app","appId":"1:441428948783:web:09e281e761137fdb59d3da","type":"DEFAULT_SITE"}]}
+[debug] [2025-10-28T06:08:43.666Z] Checked if tokens are valid: true, expires at: 1761634466486
+[debug] [2025-10-28T06:08:43.666Z] Checked if tokens are valid: true, expires at: 1761634466486
+[debug] [2025-10-28T06:08:43.666Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/-/webApps/1:441428948783:web:09e281e761137fdb59d3da/config [none]
+[debug] [2025-10-28T06:08:44.267Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/-/webApps/1:441428948783:web:09e281e761137fdb59d3da/config 200
+[debug] [2025-10-28T06:08:44.267Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/-/webApps/1:441428948783:web:09e281e761137fdb59d3da/config {"projectId":"trendfeed-cb56b","appId":"1:441428948783:web:09e281e761137fdb59d3da","storageBucket":"trendfeed-cb56b.firebasestorage.app","apiKey":"AIzaSyD5sJZfTPVILAgU2a1jjjs9QtFvFuEG4dw","authDomain":"trendfeed-cb56b.firebaseapp.com","messagingSenderId":"441428948783","measurementId":"G-MTKRJ3HRTH","projectNumber":"441428948783","version":"2"}
+[info] 
+   Thank you for trying our early preview of Next.js support on Firebase Hosting.
+   During the preview, support is best-effort and breaking changes can be expected. Proceed with caution.
+   The integration is known to work with Next.js version 12 - 15.0. You may encounter errors.
+
+   Documentation: https://firebase.google.com/docs/hosting/frameworks/nextjs
+   File a bug: https://github.com/firebase/firebase-tools/issues/new?template=bug_report.md
+   Submit a feature request: https://github.com/firebase/firebase-tools/issues/new?template=feature_request.md
+
+   We'd love to learn from you. Express your interest in helping us shape the future of Firebase Hosting: https://goo.gle/41enW5X
+
+[debug] [2025-10-28T06:08:46.679Z] Checked if tokens are valid: true, expires at: 1761634466486
+[debug] [2025-10-28T06:08:46.679Z] Checked if tokens are valid: true, expires at: 1761634466486
+[debug] [2025-10-28T06:08:46.679Z] >>> [apiv2][query] GET https://firebasehosting.googleapis.com/v1beta1/projects/trendfeed-cb56b/sites/trendfeed-cb56b [none]
+[debug] [2025-10-28T06:08:47.101Z] <<< [apiv2][status] GET https://firebasehosting.googleapis.com/v1beta1/projects/trendfeed-cb56b/sites/trendfeed-cb56b 200
+[debug] [2025-10-28T06:08:47.101Z] <<< [apiv2][body] GET https://firebasehosting.googleapis.com/v1beta1/projects/trendfeed-cb56b/sites/trendfeed-cb56b {"name":"projects/trendfeed-cb56b/sites/trendfeed-cb56b","defaultUrl":"https://trendfeed-cb56b.web.app","appId":"1:441428948783:web:09e281e761137fdb59d3da","type":"DEFAULT_SITE"}
+[info]    ▲ Next.js 15.5.4
+   - Environments: .env.local
+
+
+[info]    Creating an optimized production build ...
+
+[info]  ✓ Compiled successfully in 2.5s
+
+[info]    Linting and checking validity of types ...
+
+[info] 
+./app/settings/page.tsx
+64:15  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules
+
+[info]    Collecting page data ...
+
+[info]    Generating static pages (0/10) ...
+
+[info] Error occurred prerendering page "/404". Read more: https://nextjs.org/docs/messages/prerender-error
+[Error [PageNotFoundError]: Cannot find module for page: /_document] {
+  code: 'ENOENT'
+}
+Export encountered an error on /_error: /404, exiting the build.
+
+[info]  ⨯ Next.js build worker exited with code: 1 and signal: null
+
+[debug] [2025-10-28T06:09:01.214Z] Error: ENOENT: no such file or directory, open '/Users/Ruffles/Projects/TrendFeed/.next/export-marker.json'
+[error] 
+[error] Error: An unexpected error has occurred.

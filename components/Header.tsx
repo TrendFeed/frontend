@@ -15,6 +15,10 @@ export default function Header() {
     router.push("/settings");
   };
 
+  const handleNotifications = () => {
+    router.push("/notifications");
+  };
+
   const handleNewsletter = () => {
     dispatch(openNewsletterModal());
   };
@@ -56,6 +60,7 @@ export default function Header() {
             <button
               className="p-2 hover:bg-[#161B22] hover:cursor-pointer rounded-lg transition-colors"
               aria-label="Notifications"
+              onClick={handleNotifications}
             >
               <Bell className="w-5 h-5 text-[#8B949E] hover:text-[#C9D1D9]" />
             </button>
