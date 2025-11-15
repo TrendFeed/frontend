@@ -58,7 +58,8 @@ export default function Header() {
               <Mail className="w-5 h-5 text-[#8B949E] hover:text-[#C9D1D9]" />
             </button>
             <button
-              className="p-2 hover:bg-[#161B22] hover:cursor-pointer rounded-lg transition-colors"
+              className="p-2 hover:bg-[#161B22] hover:curson
+              r-pointer rounded-lg transition-colors"
               aria-label="Notifications"
               onClick={handleNotifications}
             >

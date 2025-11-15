@@ -12,7 +12,7 @@ interface ComicsState {
 
 const initialState: ComicsState = {
   comics: [],
-  activeTab: "forYou",
+  activeTab: "trending",
   sortBy: "trending",
   languageFilter: "all",
   searchQuery: "",

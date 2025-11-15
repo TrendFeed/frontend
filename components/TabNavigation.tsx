@@ -11,8 +11,8 @@ export default function TabNavigation() {
 
   // 탭 목록 정의
   const tabs: { id: TabType; label: string }[] = [
-    { id: "forYou", label: "For You" },
     { id: "trending", label: "Trending" },
+    { id: "forYou", label: "For You" },
     { id: "saved", label: "Saved" },
   ];
 
