@@ -1,0 +1,27 @@
+<svg width="1200" height="720" viewBox="0 0 1200 720" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="720" rx="32" fill="#0D1117"/>
+  <rect x="40" y="40" width="1120" height="640" rx="28" fill="url(#grad1)"/>
+  <g opacity="0.9">
+    <text x="80" y="140" fill="#58A6FF" font-size="56" font-weight="600" font-family="'Inter', 'Pretendard', sans-serif">
+      Next.js 15 · Partial Prerendering
+    </text>
+    <text x="80" y="205" fill="#C9D1D9" font-size="28" font-family="'Inter', 'Pretendard', sans-serif">
+      Static + Dynamic islands stitched at build time for instant TTFB.
+    </text>
+  </g>
+  <rect x="80" y="250" width="1040" height="320" rx="24" fill="#161B22" stroke="#30363D" stroke-width="2"/>
+  <polyline points="120,500 360,360 540,420 760,300 1000,360" stroke="#3FB950" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="360" cy="360" r="18" fill="#58A6FF"/>
+  <circle cx="760" cy="300" r="18" fill="#58A6FF"/>
+  <g fill="#8B949E" font-family="'Inter', 'Pretendard', sans-serif" font-size="22">
+    <text x="110" y="600">Build time</text>
+    <text x="910" y="600">Runtime</text>
+    <text x="80" y="630">SSR fallback drops 60% thanks to partial prerender zoning.</text>
+  </g>
+  <defs>
+    <linearGradient id="grad1" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0D1117"/>
+      <stop offset="100%" stop-color="#111b2f"/>
+    </linearGradient>
+  </defs>
+</svg>

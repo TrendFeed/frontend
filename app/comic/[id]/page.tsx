@@ -20,14 +20,12 @@ import { openShareModal, openNewsletterModal } from "@/lib/redux/slices/uiSlice"
 import ShareModal from "@/components/ShareModal";
 import NewsletterModal from "@/components/NewsletterModal";
 import ComicCard from "@/components/ComicCard";
-import {
-  fetchComicById,
-  fetchComicsByLanguage,
-  shareComic,
-} from "@/lib/api/comics";
-import { saveComic, unsaveComic } from "@/lib/api/user";
 import { Comic } from "@/lib/types";
 import { useAuth } from "@/lib/contexts/AuthContext";
+import {
+  findMockComicById,
+  getMockComicsByLanguage,
+} from "@/lib/mock/comics";
 
 export default function ComicDetailPage() {
   const params = useParams();
@@ -48,6 +46,10 @@ export default function ComicDetailPage() {
     return Number.isNaN(parsed) ? null : parsed;
   }, [params]);
 
+  /**
+   * TODO: Restore the networked comic fetching logic below when localhost is available.
+   */
+  /*
   useEffect(() => {
     if (!comicId) {
       setError("Invalid comic id.");
@@ -87,37 +89,58 @@ export default function ComicDetailPage() {
 
     return () => controller.abort();
   }, [comicId]);
+  */
+
+  useEffect(() => {
+    if (!comicId) {
+      setError("Invalid comic id.");
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    const result = findMockComicById(comicId);
+    if (!result) {
+      setError("Unable to find this comic in the mock data.");
+      setLoading(false);
+      return;
+    }
+
+    setComic(result);
+    if (result.language) {
+      const related = getMockComicsByLanguage(result.language).filter(
+        (relatedComic) => relatedComic.id !== result.id
+      );
+      setRelatedComics(related);
+    } else {
+      setRelatedComics([]);
+    }
+    setLoading(false);
+  }, [comicId]);
 
   const isSaved = comic ? savedComics.includes(comic.id) : false;
 
-  const handleSave = async () => {
+  const handleSave = () => {
     if (!comic) return;
     if (!user) {
       alert("Please log in to save comics.");
       return;
     }
 
-    try {
-      if (isSaved) {
-        await unsaveComic(comic.id);
-        dispatch(removeSavedComicId(comic.id));
-      } else {
-        await saveComic(comic.id);
-        dispatch(addSavedComicId(comic.id));
-      }
-    } catch (err) {
-      console.error("Failed to toggle saved comic:", err);
-      alert("Unable to update saved comics right now.");
+    if (isSaved) {
+      dispatch(removeSavedComicId(comic.id));
+    } else {
+      dispatch(addSavedComicId(comic.id));
     }
   };
 
-  const handleShare = async () => {
+  const handleShare = () => {
     if (!comic) return;
-    try {
-      await shareComic(comic.id);
-    } catch (err) {
-      console.error("Failed to record share:", err);
-    }
+    setComic((prev) =>
+      prev ? { ...prev, shares: prev.shares + 1 } : prev
+    );
     dispatch(openShareModal(comic));
   };
 

@@ -1,0 +1,25 @@
+<svg width="1200" height="720" viewBox="0 0 1200 720" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="720" rx="32" fill="#050F1F"/>
+  <rect x="40" y="40" width="1120" height="640" rx="28" fill="#0C1A33"/>
+  <text x="80" y="140" fill="#F2F5FF" font-size="52" font-family="'Inter', 'Pretendard', sans-serif" font-weight="600">
+    Templates Catalog
+  </text>
+  <text x="80" y="195" fill="#A7B4D6" font-size="26" font-family="'Inter', 'Pretendard', sans-serif">
+    Deployable AI agents for productivity teams
+  </text>
+  <rect x="80" y="250" width="300" height="360" rx="24" fill="#101F3A" stroke="#273D68" stroke-width="2"/>
+  <rect x="460" y="250" width="300" height="360" rx="24" fill="#101F3A" stroke="#273D68" stroke-width="2"/>
+  <rect x="840" y="250" width="300" height="360" rx="24" fill="#101F3A" stroke="#273D68" stroke-width="2"/>
+  <text x="120" y="320" fill="#73C5FF" font-size="28" font-family="'Inter', 'Pretendard', sans-serif">Search Agent</text>
+  <text x="500" y="320" fill="#73C5FF" font-size="28" font-family="'Inter', 'Pretendard', sans-serif">Code Buddy</text>
+  <text x="880" y="320" fill="#73C5FF" font-size="28" font-family="'Inter', 'Pretendard', sans-serif">Ops Copilot</text>
+  <text x="120" y="360" fill="#8B949E" font-size="22" font-family="'Inter', 'Pretendard', sans-serif">
+    Multi-hop retrieval with fact filters.
+  </text>
+  <text x="500" y="360" fill="#8B949E" font-size="22" font-family="'Inter', 'Pretendard', sans-serif">
+    In-editor tool calling for diffs.
+  </text>
+  <text x="880" y="360" fill="#8B949E" font-size="22" font-family="'Inter', 'Pretendard', sans-serif">
+    PagerDuty + Slack hand-offs.
+  </text>
+</svg>
