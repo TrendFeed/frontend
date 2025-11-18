@@ -2,6 +2,30 @@ import { Comic } from "@/lib/types";
 
 const now = new Date().toISOString();
 
+const createPanelPaths = (folder: string, files: string[]) =>
+  files.map((file) => `/mock/${folder}/${file}`);
+
+const nextPanels = createPanelPaths("next", [
+  "next1.png",
+  "next2.png",
+  "next3.png",
+  "next4.png",
+  "next5.webp",
+  "next6.png",
+  "next7.png",
+]);
+
+const langchainPanels = createPanelPaths("langchain-ai", [
+  "langchain1.png",
+  "langchain2.png",
+  "langchain3.png",
+  "langchain4.png",
+  "langchain5.webp",
+  "langchain6.png",
+  "langchain7.webp",
+  "langchain8.png",
+]);
+
 export const MOCK_COMICS: Comic[] = [
   {
     id: 101,
@@ -9,10 +33,7 @@ export const MOCK_COMICS: Comic[] = [
     repoUrl: "https://github.com/vercel/next.js",
     stars: 124205,
     language: "TypeScript",
-    panels: [
-      "/mock/next-runtime-panel-1.svg",
-      "/mock/next-runtime-panel-2.svg",
-    ],
+    panels: nextPanels,
     keyInsights: [
       "Next.js 15 introduces Partial Prerendering, letting devs mix static and dynamic islands without extra config.",
       "The new Turbopack dev server cuts cold-boot time in half for large monorepos.",
@@ -30,10 +51,7 @@ export const MOCK_COMICS: Comic[] = [
     repoUrl: "https://github.com/langchain-ai/langchain",
     stars: 72458,
     language: "Python",
-    panels: [
-      "/mock/langchain-panel-1.svg",
-      "/mock/langchain-panel-2.svg",
-    ],
+    panels: langchainPanels,
     keyInsights: [
       "v0.3's Runnable interfaces unify graph, agent, and tools pipelines under one mental model.",
       "LangGraph now ships persistence primitives so conversations can pause/resume safely.",
