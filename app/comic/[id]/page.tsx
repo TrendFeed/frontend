@@ -1,36 +1,141 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Share2, ExternalLink, Download, Bookmark, Mail } from "lucide-react";
+import {
+  ArrowLeft,
+  Share2,
+  ExternalLink,
+  Download,
+  Bookmark,
+  Mail,
+} from "lucide-react";
 import Image from "next/image";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
-import { toggleSavedComic } from "@/lib/redux/slices/userSlice";
+import {
+  addSavedComicId,
+  removeSavedComicId,
+} from "@/lib/redux/slices/userSlice";
 import { openShareModal, openNewsletterModal } from "@/lib/redux/slices/uiSlice";
-import { mockComics } from "@/lib/mockData";
-import ComicCard from "@/components/ComicCard";
 import ShareModal from "@/components/ShareModal";
 import NewsletterModal from "@/components/NewsletterModal";
+import ComicCard from "@/components/ComicCard";
+import {
+  fetchComicById,
+  fetchComicsByLanguage,
+  shareComic,
+} from "@/lib/api/comics";
+import { saveComic, unsaveComic } from "@/lib/api/user";
+import { Comic } from "@/lib/types";
+import { useAuth } from "@/lib/contexts/AuthContext";
 
-// 코믹 상세 페이지 컴포넌트
 export default function ComicDetailPage() {
   const params = useParams();
   const router = useRouter();
   const dispatch = useAppDispatch();
+  const { user } = useAuth();
+
   const savedComics = useAppSelector((state) => state.user.savedComics);
+  const [comic, setComic] = useState<Comic | null>(null);
+  const [relatedComics, setRelatedComics] = useState<Comic[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // URL 파라미터로 해당 코믹 찾기
-  const comic = mockComics.find((c) => c.id === params.id);
-  // 같은 언어의 관련 코믹 3개 가져오기
-  const relatedComics = mockComics.filter(
-    (c) => c.language === comic?.language && c.id !== params.id
-  ).slice(0, 3);
+  const comicId = useMemo(() => {
+    const idParam = params?.id;
+    if (!idParam) return null;
+    const parsed = Array.isArray(idParam) ? Number(idParam[0]) : Number(idParam);
+    return Number.isNaN(parsed) ? null : parsed;
+  }, [params]);
 
-  // 코믹을 찾을 수 없을 때 에러 페이지 표시
-  if (!comic) {
+  useEffect(() => {
+    if (!comicId) {
+      setError("Invalid comic id.");
+      setLoading(false);
+      return;
+    }
+
+    const controller = new AbortController();
+
+    const loadComic = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const result = await fetchComicById(comicId, controller.signal);
+        setComic(result);
+
+        if (result.language) {
+          const related = await fetchComicsByLanguage(result.language, {
+            page: 1,
+            limit: 4,
+            signal: controller.signal,
+          });
+          setRelatedComics(
+            related.data.filter((relatedComic) => relatedComic.id !== result.id)
+          );
+        }
+      } catch (err: any) {
+        if (err?.name === "AbortError") return;
+        console.error("Failed to load comic:", err);
+        setError(err?.message || "Unable to load this comic.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void loadComic();
+
+    return () => controller.abort();
+  }, [comicId]);
+
+  const isSaved = comic ? savedComics.includes(comic.id) : false;
+
+  const handleSave = async () => {
+    if (!comic) return;
+    if (!user) {
+      alert("Please log in to save comics.");
+      return;
+    }
+
+    try {
+      if (isSaved) {
+        await unsaveComic(comic.id);
+        dispatch(removeSavedComicId(comic.id));
+      } else {
+        await saveComic(comic.id);
+        dispatch(addSavedComicId(comic.id));
+      }
+    } catch (err) {
+      console.error("Failed to toggle saved comic:", err);
+      alert("Unable to update saved comics right now.");
+    }
+  };
+
+  const handleShare = async () => {
+    if (!comic) return;
+    try {
+      await shareComic(comic.id);
+    } catch (err) {
+      console.error("Failed to record share:", err);
+    }
+    dispatch(openShareModal(comic));
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#0D1117] flex items-center justify-center text-[#8B949E]">
+        Loading comic...
+      </div>
+    );
+  }
+
+  if (error || !comic) {
     return (
       <div className="min-h-screen bg-[#0D1117] flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-[#C9D1D9] mb-2">Comic Not Found</h1>
+          <h1 className="text-2xl font-bold text-[#C9D1D9] mb-2">
+            {error || "Comic Not Found"}
+          </h1>
           <button
             onClick={() => router.push("/")}
             className="text-[#58A6FF] hover:underline hover:cursor-pointer"
@@ -42,15 +147,10 @@ export default function ComicDetailPage() {
     );
   }
 
-  // 현재 코믹이 저장되어 있는지 확인
-  const isSaved = savedComics.includes(comic.id);
-
   return (
     <div className="min-h-screen bg-[#0D1117]">
-      {/* 상단 고정 헤더 */}
       <header className="sticky top-0 z-50 bg-[#0D1117]/80 backdrop-blur-md border-b border-[#30363D] shadow-sm">
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
-          {/* 뒤로 가기 버튼 */}
           <button
             onClick={() => router.back()}
             className="flex items-center gap-2 text-[#8B949E] hover:text-[#58A6FF] transition-all hover:scale-105 hover:cursor-pointer"
@@ -59,7 +159,6 @@ export default function ComicDetailPage() {
             <span className="hidden sm:inline font-medium">Back</span>
           </button>
 
-          {/* 뉴스레터, 공유 및 저장 버튼 */}
           <div className="flex items-center gap-2">
             <button
               onClick={() => dispatch(openNewsletterModal())}
@@ -69,14 +168,14 @@ export default function ComicDetailPage() {
               <Mail className="w-5 h-5 text-[#8B949E] hover:text-[#58A6FF]" />
             </button>
             <button
-              onClick={() => dispatch(openShareModal(comic.id))}
+              onClick={handleShare}
               className="p-2.5 hover:bg-[#161B22] rounded-xl transition-all hover:scale-110 hover:cursor-pointer"
               aria-label="Share"
             >
               <Share2 className="w-5 h-5 text-[#8B949E] hover:text-[#58A6FF]" />
             </button>
             <button
-              onClick={() => dispatch(toggleSavedComic(comic.id))}
+              onClick={handleSave}
               className="p-2.5 hover:bg-[#161B22] rounded-xl transition-all hover:scale-110 hover:cursor-pointer"
               aria-label={isSaved ? "Unsave" : "Save"}
             >
@@ -92,9 +191,7 @@ export default function ComicDetailPage() {
         </div>
       </header>
 
-      {/* 메인 콘텐츠 */}
       <main className="max-w-4xl mx-auto px-4 py-8">
-        {/* 제목 섹션 */}
         <div className="mb-10">
           <div className="flex items-start justify-between gap-4 mb-4">
             <div>
@@ -125,52 +222,58 @@ export default function ComicDetailPage() {
           </div>
         </div>
 
-        {/* 코믹 패널 이미지 */}
         <div className="mb-10">
-          <div className="space-y-5">
-            {comic.panels.map((panel, index) => (
-              <div
-                key={index}
-                className="group/panel relative aspect-[3/2] bg-[#161B22] rounded-2xl overflow-hidden border border-[#30363D] hover:border-[#58A6FF] shadow-md hover:shadow-2xl"
-              >
-                <Image
-                  src={panel}
-                  alt={`${comic.repoName} panel ${index + 1}`}
-                  fill
-                  className="object-cover"
-                  unoptimized
+          {comic.panels.length > 0 ? (
+            <div className="space-y-5">
+              {comic.panels.map((panel, index) => (
+                <div
+                  key={index}
+                  className="group/panel relative aspect-[3/2] bg-[#161B22] rounded-2xl overflow-hidden border border-[#30363D] hover:border-[#58A6FF] shadow-md hover:shadow-2xl"
+                >
+                  <Image
+                    src={panel}
+                    alt={`${comic.repoName} panel ${index + 1}`}
+                    fill
+                    className="object-cover"
+                    unoptimized
+                  />
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-dashed border-[#30363D] bg-[#161B22] p-10 text-center text-[#8B949E]">
+              Panels will be available soon.
+            </div>
+          )}
+
+          {comic.panels.length > 0 && (
+            <div className="flex justify-center gap-2 mt-8">
+              {comic.panels.map((_, index) => (
+                <div
+                  key={index}
+                  className="w-2.5 h-2.5 rounded-full bg-[#58A6FF] shadow-sm hover:scale-125 transition-transform cursor-pointer"
                 />
-              </div>
-            ))}
-          </div>
-
-          {/* 진행 상태 표시 (패널 개수만큼 점으로 표시) */}
-          <div className="flex justify-center gap-2 mt-8">
-            {comic.panels.map((_, index) => (
-              <div
-                key={index}
-                className="w-2.5 h-2.5 rounded-full bg-[#58A6FF] shadow-sm hover:scale-125 transition-transform cursor-pointer"
-              />
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* 주요 인사이트 */}
-        <div className="mb-8 bg-[#161B22] border border-[#30363D] rounded-lg p-6">
-          <h2 className="text-xl font-bold text-[#C9D1D9] mb-4">
-            Key Insights
-          </h2>
-          <ul className="space-y-3">
-            {comic.keyInsights.map((insight, index) => (
-              <li key={index} className="flex items-start gap-3">
-                <div className="w-1.5 h-1.5 rounded-full bg-[#58A6FF] mt-2 flex-shrink-0" />
-                <span className="text-[#8B949E]">{insight}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
+        {comic.keyInsights.length > 0 && (
+          <div className="mb-8 bg-[#161B22] border border-[#30363D] rounded-lg p-6">
+            <h2 className="text-xl font-bold text-[#C9D1D9] mb-4">
+              Key Insights
+            </h2>
+            <ul className="space-y-3">
+              {comic.keyInsights.map((insight, index) => (
+                <li key={index} className="flex items-start gap-3">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#58A6FF] mt-2 flex-shrink-0" />
+                  <span className="text-[#8B949E]">{insight}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
-        {/* 액션 버튼 (GitHub 보기, 다운로드) */}
         <div className="flex flex-col sm:flex-row gap-3 mb-12">
           <a
             href={comic.repoUrl}
@@ -187,14 +290,13 @@ export default function ComicDetailPage() {
           </button>
         </div>
 
-        {/* 관련 코믹 (같은 언어) */}
         {relatedComics.length > 0 && (
           <div>
             <h2 className="text-2xl font-bold text-[#C9D1D9] mb-6">
               More {comic.language} Comics
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {relatedComics.map((relatedComic) => (
+              {relatedComics.slice(0, 3).map((relatedComic) => (
                 <ComicCard key={relatedComic.id} comic={relatedComic} />
               ))}
             </div>
@@ -202,10 +304,7 @@ export default function ComicDetailPage() {
         )}
       </main>
 
-      {/* 공유 모달 */}
       <ShareModal />
-
-      {/* 뉴스레터 모달 */}
       <NewsletterModal />
     </div>
   );

@@ -1,5 +1,11 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { Comic, TabType, SortType, LanguageFilter } from "@/lib/types";
+import {
+  Comic,
+  TabType,
+  SortType,
+  LanguageFilter,
+  PaginationInfo,
+} from "@/lib/types";
 
 interface ComicsState {
   comics: Comic[];
@@ -8,6 +14,8 @@ interface ComicsState {
   languageFilter: LanguageFilter;
   searchQuery: string;
   loading: boolean;
+  pagination: PaginationInfo | null;
+  error: string | null;
 }
 
 const initialState: ComicsState = {
@@ -17,6 +25,8 @@ const initialState: ComicsState = {
   languageFilter: "all",
   searchQuery: "",
   loading: false,
+  pagination: null,
+  error: null,
 };
 
 const comicsSlice = createSlice({
@@ -41,10 +51,19 @@ const comicsSlice = createSlice({
     setLoading: (state, action: PayloadAction<boolean>) => {
       state.loading = action.payload;
     },
-    toggleLike: (state, action: PayloadAction<string>) => {
-      const comic = state.comics.find((c) => c.id === action.payload);
+    setPagination: (state, action: PayloadAction<PaginationInfo | null>) => {
+      state.pagination = action.payload;
+    },
+    setError: (state, action: PayloadAction<string | null>) => {
+      state.error = action.payload;
+    },
+    updateComicMetrics: (
+      state,
+      action: PayloadAction<{ id: number; changes: Partial<Comic> }>
+    ) => {
+      const comic = state.comics.find((c) => c.id === action.payload.id);
       if (comic) {
-        comic.likes += 1;
+        Object.assign(comic, action.payload.changes);
       }
     },
   },
@@ -57,7 +76,9 @@ export const {
   setLanguageFilter,
   setSearchQuery,
   setLoading,
-  toggleLike,
+  setPagination,
+  setError,
+  updateComicMetrics,
 } = comicsSlice.actions;
 
 export default comicsSlice.reducer;

@@ -4,6 +4,10 @@ import { X, Mail, Check, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import { closeNewsletterModal } from "@/lib/redux/slices/uiSlice";
+import {
+  subscribeToNewsletter,
+  unsubscribeNewsletter,
+} from "@/lib/api/newsletter";
 
 // 뉴스레터 구독 모달 컴포넌트
 export default function NewsletterModal() {
@@ -49,21 +53,17 @@ export default function NewsletterModal() {
     setSubscriptionStatus("idle");
 
     try {
-      // TODO: 백엔드 API 연동
-      // const response = await fetch('/api/newsletter/subscribe', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ email })
-      // });
-      // const data = await response.json();
+      const response = await subscribeToNewsletter(email);
 
-      // 임시로 성공 처리 (나중에 실제 API 연동)
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      setSubscriptionStatus("success");
-      setMessage(
-        "Check your email! We've sent you a confirmation link to complete your subscription."
-      );
+      if (response.status === "active") {
+        setMessage("You're already subscribed and confirmed!");
+        setSubscriptionStatus("subscribed");
+      } else {
+        setSubscriptionStatus("success");
+        setMessage(
+          "Check your email! We've sent you a confirmation link to complete your subscription."
+        );
+      }
       setEmail("");
       setAgreedToPrivacy(false);
     } catch (err: any) {
@@ -76,23 +76,31 @@ export default function NewsletterModal() {
 
   // 구독 해지 핸들러
   const handleUnsubscribe = async () => {
+    if (!email || !isValidEmail(email)) {
+      setSubscriptionStatus("error");
+      setMessage("Enter the email you used to subscribe.");
+      return;
+    }
+
+    const token =
+      typeof window !== "undefined"
+        ? window.prompt("Enter the unsubscribe token from your email")
+        : null;
+
+    if (!token) {
+      setSubscriptionStatus("error");
+      setMessage("Unsubscribe token is required.");
+      return;
+    }
+
     setLoading(true);
 
     try {
-      // TODO: 백엔드 API 연동
-      // const response = await fetch('/api/newsletter/unsubscribe', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ email })
-      // });
-
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
+      await unsubscribeNewsletter(email, token);
       setSubscriptionStatus("idle");
       setMessage("You have been unsubscribed successfully.");
-      setTimeout(() => {
-        setMessage("");
-      }, 3000);
+      setEmail("");
+      setAgreedToPrivacy(false);
     } catch (err: any) {
       setSubscriptionStatus("error");
       setMessage(err.message || "Failed to unsubscribe. Please try again.");
@@ -279,10 +287,11 @@ export default function NewsletterModal() {
             )}
 
             {/* 구독 해지 링크 */}
-            {subscriptionStatus === "subscribed" && (
+            {email && subscriptionStatus !== "success" && (
               <div className="mt-6 pt-6 border-t border-[#30363D]">
                 <p className="text-sm text-[#8B949E] text-center mb-3">
-                  Already subscribed?
+                  Already subscribed? Enter your email and use the unsubscribe
+                  token from your inbox.
                 </p>
                 <button
                   onClick={handleUnsubscribe}

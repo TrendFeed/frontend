@@ -3,10 +3,18 @@
 import { MessageCircle, Share2, Bookmark } from "lucide-react";
 import { Comic } from "@/lib/types";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
-import { toggleSavedComic, toggleLikedComic } from "@/lib/redux/slices/userSlice";
+import {
+  addSavedComicId,
+  removeSavedComicId,
+  toggleLikedComic,
+} from "@/lib/redux/slices/userSlice";
 import { openShareModal } from "@/lib/redux/slices/uiSlice";
 import Link from "next/link";
 import Image from "next/image";
+import { useAuth } from "@/lib/contexts/AuthContext";
+import { saveComic, unsaveComic } from "@/lib/api/user";
+import { likeComic, shareComic } from "@/lib/api/comics";
+import { updateComicMetrics } from "@/lib/redux/slices/comicsSlice";
 
 interface ComicCardProps {
   comic: Comic;
@@ -14,25 +22,65 @@ interface ComicCardProps {
 
 export default function ComicCard({ comic }: ComicCardProps) {
   const dispatch = useAppDispatch();
+  const { user } = useAuth();
   const savedComics = useAppSelector((state) => state.user.savedComics);
   const likedComics = useAppSelector((state) => state.user.likedComics);
 
   const isSaved = savedComics.includes(comic.id);
   const isLiked = likedComics.includes(comic.id);
 
-  const handleSave = (e: React.MouseEvent) => {
+  const handleSave = async (e: React.MouseEvent) => {
     e.preventDefault();
-    dispatch(toggleSavedComic(comic.id));
+    if (!user) {
+      alert("Please log in to save comics.");
+      return;
+    }
+
+    try {
+      if (isSaved) {
+        await unsaveComic(comic.id);
+        dispatch(removeSavedComicId(comic.id));
+      } else {
+        await saveComic(comic.id);
+        dispatch(addSavedComicId(comic.id));
+      }
+    } catch (error) {
+      console.error("Failed to toggle saved comic:", error);
+      alert("Unable to update saved comics. Please try again.");
+    }
   };
 
-  const handleLike = (e: React.MouseEvent) => {
+  const handleLike = async (e: React.MouseEvent) => {
     e.preventDefault();
-    dispatch(toggleLikedComic(comic.id));
+    try {
+      await likeComic(comic.id);
+      dispatch(toggleLikedComic(comic.id));
+      dispatch(
+        updateComicMetrics({
+          id: comic.id,
+          changes: { likes: comic.likes + 1 },
+        })
+      );
+    } catch (error) {
+      console.error("Failed to like comic:", error);
+      alert("Unable to like this comic right now.");
+    }
   };
 
-  const handleShare = (e: React.MouseEvent) => {
+  const handleShare = async (e: React.MouseEvent) => {
     e.preventDefault();
-    dispatch(openShareModal(comic.id));
+    try {
+      await shareComic(comic.id);
+      dispatch(
+        updateComicMetrics({
+          id: comic.id,
+          changes: { shares: comic.shares + 1 },
+        })
+      );
+    } catch (error) {
+      console.error("Failed to record share:", error);
+    }
+    dispatch(openShareModal(comic));
   };
 
   const previewPanel = comic.panels[0];
@@ -105,7 +153,7 @@ export default function ComicCard({ comic }: ComicCardProps) {
                     className="flex items-center gap-1.5 text-sm transition-transform duration-[2000ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:scale-110"
                 >
                   <MessageCircle className="w-4 h-4"/>
-                  <span>{isLiked ? comic.likes + 1 : comic.likes}</span>
+                  <span>{comic.likes}</span>
                 </button>
                 <div className="flex items-center gap-1.5 text-sm">
                   <Share2 className="w-4 h-4"/>

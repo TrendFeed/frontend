@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Check, X, Loader2, ArrowLeft, Mail } from "lucide-react";
 import Link from "next/link";
+import { confirmNewsletterSubscription } from "@/lib/api/newsletter";
 
 export default function NewsletterConfirmClient() {
     const searchParams = useSearchParams();
@@ -22,14 +23,13 @@ export default function NewsletterConfirmClient() {
 
         const confirmSubscription = async () => {
             try {
-                // TODO: 실제 API 연동 시 아래 주석 해제
-                // const response = await fetch(`/api/newsletter/confirm?token=${token}`, { method: "GET" });
-                // const data = await response.json();
-                // if (!response.ok) throw new Error(data.message || "Confirmation failed");
-
-                await new Promise((resolve) => setTimeout(resolve, 2000)); // mock delay
+                const response = await confirmNewsletterSubscription(token);
                 setStatus("success");
-                setMessage("Your subscription is confirmed! You'll start receiving weekly updates.");
+                setMessage(
+                    response.status === "active"
+                        ? "Your subscription is confirmed! You'll start receiving weekly updates."
+                        : "Confirmation received. Please check your inbox for next steps."
+                );
             } catch (err: any) {
                 setStatus("error");
                 setMessage(err.message || "Failed to confirm subscription. Please try again or contact support.");

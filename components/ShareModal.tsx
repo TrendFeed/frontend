@@ -4,24 +4,23 @@ import { X, Twitter, Linkedin, Link as LinkIcon, Check } from "lucide-react";
 import { useState } from "react";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
 import { closeShareModal } from "@/lib/redux/slices/uiSlice";
-import { mockComics } from "@/lib/mockData";
 
 // 공유 모달 컴포넌트
 export default function ShareModal() {
   const dispatch = useAppDispatch();
   // Redux 스토어에서 모달 상태 가져오기
-  const { shareModalOpen, shareModalComicId } = useAppSelector(
+  const { shareModalOpen, shareModalComic } = useAppSelector(
     (state) => state.ui
   );
   const [copied, setCopied] = useState(false); // 링크 복사 상태
 
   // 모달이 닫혀있거나 공유할 코믹이 없으면 렌더링하지 않음
-  if (!shareModalOpen || !shareModalComicId) return null;
+  if (!shareModalOpen || !shareModalComic) return null;
 
-  const comic = mockComics.find((c) => c.id === shareModalComicId);
-  if (!comic) return null;
-
-  const shareUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/comic/${comic.id}`;
+  const comic = shareModalComic;
+  const shareUrl = `${
+    typeof window !== "undefined" ? window.location.origin : ""
+  }/comic/${comic.id}`;
   const shareText = `Check out this comic about ${comic.repoName}!`;
 
   // 링크를 클립보드에 복사하는 함수

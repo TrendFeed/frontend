@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import ReduxProvider from "@/lib/providers/ReduxProvider";
 import { AuthProvider } from "@/lib/contexts/AuthContext";
+import AuthSync from "@/lib/providers/AuthSync";
 
 // 페이지 메타데이터 설정
 export const metadata: Metadata = {
@@ -28,7 +29,10 @@ export default function RootLayout({
         {/* Auth Provider로 Firebase 인증 상태 관리 */}
         <AuthProvider>
           {/* Redux 상태 관리 Provider로 자식 컴포넌트 감싸기 */}
-          <ReduxProvider>{children}</ReduxProvider>
+          <ReduxProvider>
+            <AuthSync />
+            {children}
+          </ReduxProvider>
         </AuthProvider>
       </body>
     </html>

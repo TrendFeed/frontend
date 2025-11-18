@@ -1,8 +1,9 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { Comic } from "@/lib/types";
 
 interface UiState {
   shareModalOpen: boolean;
-  shareModalComicId: string | null;
+  shareModalComic: Comic | null;
   newsletterModalOpen: boolean;
   notificationMessage: string | null;
   notificationType: "success" | "error" | "info" | null;
@@ -10,7 +11,7 @@ interface UiState {
 
 const initialState: UiState = {
   shareModalOpen: false,
-  shareModalComicId: null,
+  shareModalComic: null,
   newsletterModalOpen: false,
   notificationMessage: null,
   notificationType: null,
@@ -20,13 +21,13 @@ const uiSlice = createSlice({
   name: "ui",
   initialState,
   reducers: {
-    openShareModal: (state, action: PayloadAction<string>) => {
+    openShareModal: (state, action: PayloadAction<Comic>) => {
       state.shareModalOpen = true;
-      state.shareModalComicId = action.payload;
+      state.shareModalComic = action.payload;
     },
     closeShareModal: (state) => {
       state.shareModalOpen = false;
-      state.shareModalComicId = null;
+      state.shareModalComic = null;
     },
     openNewsletterModal: (state) => {
       state.newsletterModalOpen = true;

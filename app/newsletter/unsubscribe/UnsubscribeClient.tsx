@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Check, X, Loader2, ArrowLeft, Mail } from "lucide-react";
 import Link from "next/link";
+import { unsubscribeNewsletter } from "@/lib/api/newsletter";
 
 // 뉴스레터 구독 해지 페이지
 export default function NewsletterUnsubscribePage() {
@@ -19,7 +20,7 @@ export default function NewsletterUnsubscribePage() {
 
     useEffect(() => {
         // 이메일 또는 토큰이 없으면 에러 처리
-        if (!email && !token) {
+        if (!email || !token) {
             setStatus("error");
             setMessage("Invalid unsubscribe link. Please check your email and try again.");
             return;
@@ -28,21 +29,7 @@ export default function NewsletterUnsubscribePage() {
         // 구독 해지 API 호출
         const unsubscribe = async () => {
             try {
-                // TODO: 백엔드 API 연동
-                // const response = await fetch('/api/newsletter/unsubscribe', {
-                //   method: 'POST',
-                //   headers: { 'Content-Type': 'application/json' },
-                //   body: JSON.stringify({ email, token })
-                // });
-                // const data = await response.json();
-                //
-                // if (!response.ok) {
-                //   throw new Error(data.message || 'Unsubscribe failed');
-                // }
-
-                // 임시로 성공 처리 (나중에 실제 API 연동)
-                await new Promise((resolve) => setTimeout(resolve, 2000));
-
+                await unsubscribeNewsletter(email, token);
                 setStatus("success");
                 setMessage(
                     "You have been successfully unsubscribed from our newsletter."

@@ -1,109 +1,81 @@
-// 백엔드 API 통신 함수들
-import { getIdToken } from "../firebase/auth";
+"use client";
 
-// 백엔드 API URL (환경 변수로 설정)
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+import { apiRequest } from "@/lib/api/client";
+import { Comic, PaginatedResult, UserProfile } from "@/lib/types";
+import { ComicApiResponse, mapComicResponse } from "@/lib/api/comics";
 
-// 사용자 데이터 타입
-export interface UserData {
-  uid: string;
-  email: string;
-  displayName: string;
-  photoURL?: string;
-  provider: string;
+interface PaginatedComicResponse {
+  data: ComicApiResponse[];
+  pagination: PaginatedResult<Comic>["pagination"];
 }
 
-// API 요청 헤더 생성 (Firebase 토큰 포함)
-const getHeaders = async (): Promise<HeadersInit> => {
-  const token = await getIdToken();
+export interface UpdateProfilePayload {
+  displayName?: string;
+  preferences?: {
+    interests?: string[];
+    notifications?: Record<string, boolean>;
+    comicStyle?: string;
+  };
+}
+
+export const verifyUserSession = async (): Promise<UserProfile> => {
+  return apiRequest<UserProfile>("/api/auth/verify", {
+    method: "POST",
+    auth: true,
+  });
+};
+
+export const getUserProfile = async (): Promise<UserProfile> => {
+  return apiRequest<UserProfile>("/api/user/profile", {
+    method: "GET",
+    auth: true,
+  });
+};
+
+export const updateUserProfile = async (
+  payload: UpdateProfilePayload
+): Promise<UserProfile> => {
+  return apiRequest<UserProfile>("/api/user/profile", {
+    method: "PUT",
+    auth: true,
+    body: JSON.stringify(payload),
+  });
+};
+
+export const getSavedComics = async ({
+  page = 1,
+  limit = 50,
+  signal,
+}: { page?: number; limit?: number; signal?: AbortSignal } = {}): Promise<
+  PaginatedResult<Comic>
+> => {
+  const searchParams = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString(),
+  });
+
+  const response = await apiRequest<PaginatedComicResponse>(
+    `/api/user/saved?${searchParams.toString()}`,
+    { method: "GET", auth: true, signal }
+  );
+
   return {
-    "Content-Type": "application/json",
-    ...(token && { Authorization: `Bearer ${token}` }),
+    data: response.data.map(mapComicResponse),
+    pagination: response.pagination,
   };
 };
 
-// 백엔드에 사용자 정보 저장/업데이트
-export const syncUserToBackend = async (userData: UserData): Promise<void> => {
-  try {
-    const headers = await getHeaders();
-    const response = await fetch(`${API_URL}/api/users/sync`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify(userData),
-    });
-
-    if (!response.ok) {
-      throw new Error("Failed to sync user to backend");
-    }
-
-    const data = await response.json();
-    return data;
-  } catch (error: any) {
-    console.error("Error syncing user to backend:", error);
-    throw error;
-  }
+export const saveComic = async (comicId: number): Promise<void> => {
+  await apiRequest("/api/user/saved", {
+    method: "POST",
+    auth: true,
+    body: JSON.stringify({ comicId }),
+  });
 };
 
-// 백엔드에서 사용자 정보 가져오기
-export const getUserFromBackend = async (uid: string): Promise<any> => {
-  try {
-    const headers = await getHeaders();
-    const response = await fetch(`${API_URL}/api/users/${uid}`, {
-      method: "GET",
-      headers,
-    });
-
-    if (!response.ok) {
-      throw new Error("Failed to get user from backend");
-    }
-
-    const data = await response.json();
-    return data;
-  } catch (error: any) {
-    console.error("Error getting user from backend:", error);
-    throw error;
-  }
-};
-
-// 백엔드에서 사용자 삭제
-export const deleteUserFromBackend = async (uid: string): Promise<void> => {
-  try {
-    const headers = await getHeaders();
-    const response = await fetch(`${API_URL}/api/users/${uid}`, {
-      method: "DELETE",
-      headers,
-    });
-
-    if (!response.ok) {
-      throw new Error("Failed to delete user from backend");
-    }
-  } catch (error: any) {
-    console.error("Error deleting user from backend:", error);
-    throw error;
-  }
-};
-
-// 사용자 프로필 업데이트
-export const updateUserProfile = async (
-  uid: string,
-  updates: Partial<UserData>
-): Promise<any> => {
-  try {
-    const headers = await getHeaders();
-    const response = await fetch(`${API_URL}/api/users/${uid}`, {
-      method: "PATCH",
-      headers,
-      body: JSON.stringify(updates),
-    });
-
-    if (!response.ok) {
-      throw new Error("Failed to update user profile");
-    }
-
-    const data = await response.json();
-    return data;
-  } catch (error: any) {
-    console.error("Error updating user profile:", error);
-    throw error;
-  }
+export const unsaveComic = async (comicId: number): Promise<void> => {
+  await apiRequest(`/api/user/saved/${comicId}`, {
+    method: "DELETE",
+    auth: true,
+  });
 };

@@ -2,7 +2,7 @@ import { Comic } from "./types";
 
 export const mockComics: Comic[] = [
   {
-    id: "1",
+    id: 1,
     repoName: "shadcn/ui",
     repoUrl: "https://github.com/shadcn/ui",
     stars: 45230,
@@ -23,7 +23,7 @@ export const mockComics: Comic[] = [
     createdAt: "2025-10-01T10:00:00Z",
   },
   {
-    id: "2",
+    id: 2,
     repoName: "vercel/next.js",
     repoUrl: "https://github.com/vercel/next.js",
     stars: 118450,
@@ -44,7 +44,7 @@ export const mockComics: Comic[] = [
     createdAt: "2025-09-30T15:30:00Z",
   },
   {
-    id: "3",
+    id: 3,
     repoName: "microsoft/playwright",
     repoUrl: "https://github.com/microsoft/playwright",
     stars: 58900,
@@ -65,7 +65,7 @@ export const mockComics: Comic[] = [
     createdAt: "2025-10-01T08:00:00Z",
   },
   {
-    id: "4",
+    id: 4,
     repoName: "rust-lang/rust",
     repoUrl: "https://github.com/rust-lang/rust",
     stars: 89120,
@@ -86,7 +86,7 @@ export const mockComics: Comic[] = [
     createdAt: "2025-09-29T12:00:00Z",
   },
   {
-    id: "5",
+    id: 5,
     repoName: "facebook/react",
     repoUrl: "https://github.com/facebook/react",
     stars: 215340,
@@ -107,7 +107,7 @@ export const mockComics: Comic[] = [
     createdAt: "2025-09-28T09:00:00Z",
   },
   {
-    id: "6",
+    id: 6,
     repoName: "tensorflow/tensorflow",
     repoUrl: "https://github.com/tensorflow/tensorflow",
     stars: 178560,

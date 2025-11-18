@@ -1,11 +1,12 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { UserPreferences } from "@/lib/types";
+import { UserPreferences, UserProfile } from "@/lib/types";
 
 interface UserState {
   preferences: UserPreferences;
-  savedComics: string[]; // Comic IDs
-  likedComics: string[]; // Comic IDs
+  savedComics: number[];
+  likedComics: number[];
   isAuthenticated: boolean;
+  profile: UserProfile | null;
 }
 
 const initialState: UserState = {
@@ -20,6 +21,7 @@ const initialState: UserState = {
   savedComics: [],
   likedComics: [],
   isAuthenticated: false,
+  profile: null,
 };
 
 const userSlice = createSlice({
@@ -39,15 +41,18 @@ const userSlice = createSlice({
         (interest) => interest !== action.payload
       );
     },
-    toggleSavedComic: (state, action: PayloadAction<string>) => {
-      const index = state.savedComics.indexOf(action.payload);
-      if (index > -1) {
-        state.savedComics.splice(index, 1);
-      } else {
+    setSavedComicIds: (state, action: PayloadAction<number[]>) => {
+      state.savedComics = action.payload;
+    },
+    addSavedComicId: (state, action: PayloadAction<number>) => {
+      if (!state.savedComics.includes(action.payload)) {
         state.savedComics.push(action.payload);
       }
     },
-    toggleLikedComic: (state, action: PayloadAction<string>) => {
+    removeSavedComicId: (state, action: PayloadAction<number>) => {
+      state.savedComics = state.savedComics.filter((id) => id !== action.payload);
+    },
+    toggleLikedComic: (state, action: PayloadAction<number>) => {
       const index = state.likedComics.indexOf(action.payload);
       if (index > -1) {
         state.likedComics.splice(index, 1);
@@ -58,6 +63,12 @@ const userSlice = createSlice({
     setAuthenticated: (state, action: PayloadAction<boolean>) => {
       state.isAuthenticated = action.payload;
     },
+    setUserProfile: (state, action: PayloadAction<UserProfile | null>) => {
+      state.profile = action.payload;
+      if (action.payload?.preferences) {
+        state.preferences = action.payload.preferences;
+      }
+    },
   },
 });
 
@@ -65,9 +76,12 @@ export const {
   setPreferences,
   addInterest,
   removeInterest,
-  toggleSavedComic,
+  setSavedComicIds,
+  addSavedComicId,
+  removeSavedComicId,
   toggleLikedComic,
   setAuthenticated,
+  setUserProfile,
 } = userSlice.actions;
 
 export default userSlice.reducer;
