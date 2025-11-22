@@ -1,5 +1,4 @@
 // functions/src/index.ts
-
 // GitHub 크롤 / 후보
 export { ingest, crawl, candidates, crawlScheduled } from "./github";
 
@@ -12,3 +11,9 @@ export {
   likeComic,
   shareComic,
 } from "./comics";
+
+// Newsletter API
+export {
+  newsletterSubscribe,
+  newsletterConfirm,
+} from "./newsletter";

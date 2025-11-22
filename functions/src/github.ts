@@ -1,6 +1,7 @@
 // functions/src/github.ts
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import * as functions from "firebase-functions";
+import cors from "cors";
 
 import {
     db,
@@ -19,6 +20,8 @@ import {
     PENALTY_WEIGHT,
     TREND_THRESHOLD,
 } from "./config";
+
+const corsHandler = cors({ origin: true });
 
 // ──────────────────────────────────────────────────────────────
 // 유틸 타입
@@ -408,77 +411,83 @@ async function getOldestUngivenCandidatesAndMark(limit: number): Promise<GitHubR
 
 // GET /api/github/ingest?fullName=owner/repo
 export const ingest = functions.https.onRequest(async (req, res) => {
-    try {
-        if (req.method !== "GET") {
-            res.status(405).send("Method Not Allowed");
-            return;
+    corsHandler(req, res, async () => {
+        try {
+            if (req.method !== "GET") {
+                res.status(405).send("Method Not Allowed");
+                return;
+            }
+
+            const fullName = req.query.fullName as string | undefined;
+            if (!fullName) {
+                res.status(400).send("Missing fullName param");
+                return;
+            }
+
+            const saved = await upsertAndEvaluate(fullName);
+            if (!saved) {
+                res.status(500).send(`failed: ${fullName}`);
+                return;
+            }
+
+            const stage = saved.trendStage ?? 0;
+            const score = saved.trendScore ?? 0.0;
+            const growth = saved.growthRate ?? 0.0;
+
+            res
+                .status(200)
+                .send(
+                    `ingested: ${saved.fullName} (stage=${stage}, score=${score.toFixed(
+                        4
+                    )}, growth=${growth.toFixed(4)})`
+                );
+        } catch (err: any) {
+            console.error("ingest error", err);
+            res.status(500).send("Internal Server Error");
         }
-
-        const fullName = req.query.fullName as string | undefined;
-        if (!fullName) {
-            res.status(400).send("Missing fullName param");
-            return;
-        }
-
-        const saved = await upsertAndEvaluate(fullName);
-        if (!saved) {
-            res.status(500).send(`failed: ${fullName}`);
-            return;
-        }
-
-        const stage = saved.trendStage ?? 0;
-        const score = saved.trendScore ?? 0.0;
-        const growth = saved.growthRate ?? 0.0;
-
-        res
-            .status(200)
-            .send(
-                `ingested: ${saved.fullName} (stage=${stage}, score=${score.toFixed(
-                    4
-                )}, growth=${growth.toFixed(4)})`
-            );
-    } catch (err: any) {
-        console.error("ingest error", err);
-        res.status(500).send("Internal Server Error");
-    }
+    });
 });
 
 // POST /api/github/crawl
 export const crawl = functions.https.onRequest(async (req, res) => {
-    try {
-        if (req.method !== "POST") {
-            res.status(405).send("Method Not Allowed");
-            return;
+    corsHandler(req, res, async () => {
+        try {
+            if (req.method !== "POST") {
+                res.status(405).send("Method Not Allowed");
+                return;
+            }
+
+            await crawlAllAndEvaluateInternal();
+
+            res.status(200).send("crawl started and finished (see logs)");
+        } catch (err: any) {
+            console.error("crawl error", err);
+            res.status(500).send("Internal Server Error");
         }
-
-        await crawlAllAndEvaluateInternal();
-
-        res.status(200).send("crawl started and finished (see logs)");
-    } catch (err: any) {
-        console.error("crawl error", err);
-        res.status(500).send("Internal Server Error");
-    }
+    });
 });
 
 // GET /api/ai/candidates?limit=3
 export const candidates = functions.https.onRequest(async (req, res) => {
-    try {
-        if (req.method !== "GET") {
-            res.status(405).send("Method Not Allowed");
-            return;
+    corsHandler(req, res, async () => {
+        try {
+            if (req.method !== "GET") {
+                res.status(405).send("Method Not Allowed");
+                return;
+            }
+
+            const limitParam = req.query.limit as string | undefined;
+            let limit = Number(limitParam ?? "3");
+            if (isNaN(limit) || limit <= 0) limit = 3;
+
+            const repos = await getOldestUngivenCandidatesAndMark(limit);
+
+            res.status(200).json(repos);
+        } catch (err: any) {
+            console.error("candidates error", err);
+            res.status(500).send("Internal Server Error");
         }
-
-        const limitParam = req.query.limit as string | undefined;
-        let limit = Number(limitParam ?? "3");
-        if (isNaN(limit) || limit <= 0) limit = 3;
-
-        const repos = await getOldestUngivenCandidatesAndMark(limit);
-
-        res.status(200).json(repos);
-    } catch (err: any) {
-        console.error("candidates error", err);
-        res.status(500).send("Internal Server Error");
-    }
+    });
 });
 
 // ──────────────────────────────────────────────────────────────

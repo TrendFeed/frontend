@@ -1,6 +1,8 @@
 // functions/src/comics.ts
 import * as functions from "firebase-functions";
 import { db, admin, COMICS_COL } from "./config";
+import cors from "cors";
+const corsHandler = cors({origin: true});
 
 interface ComicDoc {
     id: number;
@@ -84,11 +86,12 @@ function getSortField(sortBy?: string): string {
 
 // GET /api/comics
 export const getComics = functions.https.onRequest(async (req, res) => {
-    try {
-        if (req.method !== "GET") {
-            res.status(405).send("Method Not Allowed");
-            return;
-        }
+    corsHandler(req, res, async () => {
+        try {
+            if (req.method !== "GET") {
+                res.status(405).send("Method Not Allowed");
+                return;
+            }
 
         const pageParam = req.query.page as string | undefined;
         const limitParam = req.query.limit as string | undefined;
@@ -127,20 +130,22 @@ export const getComics = functions.https.onRequest(async (req, res) => {
             pagination,
         };
 
-        res.status(200).json(response);
-    } catch (err) {
-        console.error("getComics error", err);
-        res.status(500).send("Internal Server Error");
-    }
+            res.status(200).json(response);
+        } catch (err) {
+            console.error("getComics error", err);
+            res.status(500).send("Internal Server Error");
+        }
+    });
 });
 
 // GET /api/comic?id=123
 export const getComicById = functions.https.onRequest(async (req, res) => {
-    try {
-        if (req.method !== "GET") {
-            res.status(405).send("Method Not Allowed");
-            return;
-        }
+    corsHandler(req, res, async () => {
+        try {
+            if (req.method !== "GET") {
+                res.status(405).send("Method Not Allowed");
+                return;
+            }
 
         const idParam = req.query.id as string | undefined;
         if (!idParam) {
@@ -156,21 +161,23 @@ export const getComicById = functions.https.onRequest(async (req, res) => {
             return;
         }
 
-        const comic = mapComicDocToResponse(doc);
-        res.status(200).json(comic);
-    } catch (err) {
-        console.error("getComicById error", err);
-        res.status(500).send("Internal Server Error");
-    }
+            const comic = mapComicDocToResponse(doc);
+            res.status(200).json(comic);
+        } catch (err) {
+            console.error("getComicById error", err);
+            res.status(500).send("Internal Server Error");
+        }
+    });
 });
 
 // GET /api/comics/new
 export const getNewComics = functions.https.onRequest(async (req, res) => {
-    try {
-        if (req.method !== "GET") {
-            res.status(405).send("Method Not Allowed");
-            return;
-        }
+    corsHandler(req, res, async () => {
+        try {
+            if (req.method !== "GET") {
+                res.status(405).send("Method Not Allowed");
+                return;
+            }
 
         const pageParam = req.query.page as string | undefined;
         const limitParam = req.query.limit as string | undefined;
@@ -202,25 +209,27 @@ export const getNewComics = functions.https.onRequest(async (req, res) => {
             itemsPerPage: limit,
         };
 
-        const response: PaginatedResponse<ComicResponse> = {
-            data: comics,
-            pagination,
-        };
+            const response: PaginatedResponse<ComicResponse> = {
+                data: comics,
+                pagination,
+            };
 
-        res.status(200).json(response);
-    } catch (err) {
-        console.error("getNewComics error", err);
-        res.status(500).send("Internal Server Error");
-    }
+            res.status(200).json(response);
+        } catch (err) {
+            console.error("getNewComics error", err);
+            res.status(500).send("Internal Server Error");
+        }
+    });
 });
 
 // GET /api/comics/by-language?language=TypeScript
 export const getComicsByLanguage = functions.https.onRequest(async (req, res) => {
-    try {
-        if (req.method !== "GET") {
-            res.status(405).send("Method Not Allowed");
-            return;
-        }
+    corsHandler(req, res, async () => {
+        try {
+            if (req.method !== "GET") {
+                res.status(405).send("Method Not Allowed");
+                return;
+            }
 
         const language = req.query.language as string | undefined;
         if (!language) {
@@ -258,25 +267,27 @@ export const getComicsByLanguage = functions.https.onRequest(async (req, res) =>
             itemsPerPage: limit,
         };
 
-        const response: PaginatedResponse<ComicResponse> = {
-            data: comics,
-            pagination,
-        };
+            const response: PaginatedResponse<ComicResponse> = {
+                data: comics,
+                pagination,
+            };
 
-        res.status(200).json(response);
-    } catch (err) {
-        console.error("getComicsByLanguage error", err);
-        res.status(500).send("Internal Server Error");
-    }
+            res.status(200).json(response);
+        } catch (err) {
+            console.error("getComicsByLanguage error", err);
+            res.status(500).send("Internal Server Error");
+        }
+    });
 });
 
 // POST /api/comics/like
 export const likeComic = functions.https.onRequest(async (req, res) => {
-    try {
-        if (req.method !== "POST") {
-            res.status(405).send("Method Not Allowed");
-            return;
-        }
+    corsHandler(req, res, async () => {
+        try {
+            if (req.method !== "POST") {
+                res.status(405).send("Method Not Allowed");
+                return;
+            }
 
         const { comicId } = req.body as { comicId?: number | string };
         if (!comicId) {
@@ -291,45 +302,48 @@ export const likeComic = functions.https.onRequest(async (req, res) => {
             return;
         }
 
-        await docRef.update({
-            likes: admin.firestore.FieldValue.increment(1),
-        });
+            await docRef.update({
+                likes: admin.firestore.FieldValue.increment(1),
+            });
 
-        res.status(200).json({ success: true });
-    } catch (err) {
-        console.error("likeComic error", err);
-        res.status(500).send("Internal Server Error");
-    }
+            res.status(200).json({ success: true });
+        } catch (err) {
+            console.error("likeComic error", err);
+            res.status(500).send("Internal Server Error");
+        }
+    });
 });
 
 // POST /api/comics/share
 export const shareComic = functions.https.onRequest(async (req, res) => {
-    try {
-        if (req.method !== "POST") {
-            res.status(405).send("Method Not Allowed");
-            return;
+    corsHandler(req,res, async()=> {
+        try {
+            if (req.method !== "POST") {
+                res.status(405).send("Method Not Allowed");
+                return;
+            }
+
+            const {comicId} = req.body as { comicId?: number | string };
+            if (!comicId) {
+                res.status(400).send("Missing comicId");
+                return;
+            }
+
+            const docRef = db.collection(COMICS_COL).doc(String(comicId));
+            const doc = await docRef.get();
+            if (!doc.exists) {
+                res.status(404).send("COMIC_NOT_FOUND");
+                return;
+            }
+
+            await docRef.update({
+                shares: admin.firestore.FieldValue.increment(1),
+            });
+
+            res.status(200).json({success: true});
+        } catch (err) {
+            console.error("shareComic error", err);
+            res.status(500).send("Internal Server Error");
         }
-
-        const { comicId } = req.body as { comicId?: number | string };
-        if (!comicId) {
-            res.status(400).send("Missing comicId");
-            return;
-        }
-
-        const docRef = db.collection(COMICS_COL).doc(String(comicId));
-        const doc = await docRef.get();
-        if (!doc.exists) {
-            res.status(404).send("COMIC_NOT_FOUND");
-            return;
-        }
-
-        await docRef.update({
-            shares: admin.firestore.FieldValue.increment(1),
-        });
-
-        res.status(200).json({ success: true });
-    } catch (err) {
-        console.error("shareComic error", err);
-        res.status(500).send("Internal Server Error");
-    }
+    })
 });
