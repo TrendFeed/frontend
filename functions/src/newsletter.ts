@@ -3,6 +3,7 @@
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 import nodemailer from "nodemailer";
+import { SMTP_USER, SMTP_PASS, SMTP_HOST, SMTP_PORT, FRONTEND_CONFIRM_URL } from "./config";
 import crypto from "crypto";
 import cors from "cors";
 
@@ -11,17 +12,6 @@ const corsHandler = cors({ origin: true });
 
 // Firestore 컬렉션
 const NEWSLETTER_COL = "newsletter_subscriptions";
-
-// 환경변수
-const SMTP_USER = functions.config().smtp.user;
-const SMTP_PASS = functions.config().smtp.pass;
-const SMTP_HOST = functions.config().smtp.host || "smtp.gmail.com";
-const SMTP_PORT = Number(functions.config().smtp.port || 465);
-
-// 이메일 인증 후 리다이렉트 되는 곳
-const FRONTEND_CONFIRM_URL =
-    functions.config().newsletter.confirm_url ||
-    "https://trendfeed.kr/newsletter/confirm";
 
 // Nodemailer 설정
 const transporter = nodemailer.createTransport({
@@ -32,7 +22,7 @@ const transporter = nodemailer.createTransport({
         user: SMTP_USER,
         pass: SMTP_PASS,
     },
-});
+} as any);
 
 // 랜덤 토큰 생성
 function generateToken(length = 24): string {

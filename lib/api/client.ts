@@ -8,7 +8,7 @@ import { getIdToken } from "@/lib/firebase/auth";
 const DEFAULT_BASE_URL =
     process.env.NODE_ENV === "development"
         ? "http://127.0.0.1:5001/trendfeed-cb56b/asia-northeast3" // Firebase Emulator용
-        : "https://asia-northeast3-trendfeed-cb56b.cloudfunctions.net"; // 실제 Functions URL
+        : "https://us-central1-trendfeed-cb56b.cloudfunctions.net"; // 실제 Functions URL
 
 // 🔥 2) NEXT_PUBLIC_API_URL을 우선함, 없으면 DEFAULT_BASE_URL 사용
 export const API_BASE_URL =
