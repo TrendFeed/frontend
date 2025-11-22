@@ -1,5 +1,7 @@
 // functions/src/github.ts
+import { onSchedule } from "firebase-functions/v2/scheduler";
 import * as functions from "firebase-functions";
+
 import {
     db,
     GITHUB_TOKEN,
@@ -483,11 +485,8 @@ export const candidates = functions.https.onRequest(async (req, res) => {
 // Pub/Sub 스케줄링 (3일마다 전체 크롤)
 // ──────────────────────────────────────────────────────────────
 
-export const crawlScheduled = functions.pubsub
-    .schedule("0 0 */3 * *")
-    .timeZone("UTC")
-    .onRun(async () => {
-        console.log("Scheduled crawl started");
-        await crawlAllAndEvaluateInternal();
-        console.log("Scheduled crawl finished");
-    });
+export const crawlScheduled = onSchedule("every 72 hours", async (event) => {
+    console.log("Scheduled crawl started");
+    await crawlAllAndEvaluateInternal();
+    console.log("Scheduled crawl finished");
+});

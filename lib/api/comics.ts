@@ -91,7 +91,7 @@ export const fetchComics = async ({
   });
 
   const result = await apiRequest<PaginatedComicResponse>(
-    `/api/comics?${searchParams.toString()}`,
+    `/getComics?${searchParams.toString()}`,
     { method: "GET", signal }
   );
 
@@ -109,10 +109,11 @@ export const fetchComicsByLanguage = async (
   const searchParams = new URLSearchParams({
     page: page.toString(),
     limit: limit.toString(),
+    language,
   });
 
   const result = await apiRequest<PaginatedComicResponse>(
-    `/api/comics/language/${encodeURIComponent(language)}?${searchParams.toString()}`,
+    `/getComicsByLanguage?${searchParams.toString()}`,
     { method: "GET", signal }
   );
 
@@ -132,7 +133,7 @@ export const fetchNewComics = async ({
   });
 
   const result = await apiRequest<PaginatedComicResponse>(
-    `/api/comics/new?${searchParams.toString()}`,
+    `/getNewComics?${searchParams.toString()}`,
     { method: "GET", signal }
   );
 
@@ -143,7 +144,8 @@ export const fetchComicById = async (
   id: number,
   signal?: AbortSignal
 ): Promise<Comic> => {
-  const result = await apiRequest<ComicApiResponse>(`/api/comics/${id}`, {
+  const params = new URLSearchParams({ id: id.toString() });
+  const result = await apiRequest<ComicApiResponse>(`/getComicById?${params.toString()}`, {
     method: "GET",
     signal,
   });
@@ -151,9 +153,15 @@ export const fetchComicById = async (
 };
 
 export const likeComic = async (id: number): Promise<void> => {
-  await apiRequest(`/api/comics/${id}/like`, { method: "POST" });
+  await apiRequest(`/likeComic`, {
+    method: "POST",
+    body: JSON.stringify({ comicId: id }),
+  });
 };
 
 export const shareComic = async (id: number): Promise<void> => {
-  await apiRequest(`/api/comics/${id}/share`, { method: "POST" });
+  await apiRequest(`/shareComic`, {
+    method: "POST",
+    body: JSON.stringify({ comicId: id }),
+  });
 };

@@ -19,14 +19,14 @@ export interface UpdateProfilePayload {
 }
 
 export const verifyUserSession = async (): Promise<UserProfile> => {
-  return apiRequest<UserProfile>("/api/auth/verify", {
+  return apiRequest<UserProfile>("/verifyUserSession", {
     method: "POST",
     auth: true,
   });
 };
 
 export const getUserProfile = async (): Promise<UserProfile> => {
-  return apiRequest<UserProfile>("/api/user/profile", {
+  return apiRequest<UserProfile>("/getUserProfile", {
     method: "GET",
     auth: true,
   });
@@ -35,7 +35,7 @@ export const getUserProfile = async (): Promise<UserProfile> => {
 export const updateUserProfile = async (
   payload: UpdateProfilePayload
 ): Promise<UserProfile> => {
-  return apiRequest<UserProfile>("/api/user/profile", {
+  return apiRequest<UserProfile>("/updateUserProfile", {
     method: "PUT",
     auth: true,
     body: JSON.stringify(payload),
@@ -55,7 +55,7 @@ export const getSavedComics = async ({
   });
 
   const response = await apiRequest<PaginatedComicResponse>(
-    `/api/user/saved?${searchParams.toString()}`,
+    `/getSavedComics?${searchParams.toString()}`,
     { method: "GET", auth: true, signal }
   );
 
@@ -66,7 +66,7 @@ export const getSavedComics = async ({
 };
 
 export const saveComic = async (comicId: number): Promise<void> => {
-  await apiRequest("/api/user/saved", {
+  await apiRequest("/saveUserComic", {
     method: "POST",
     auth: true,
     body: JSON.stringify({ comicId }),
@@ -74,8 +74,9 @@ export const saveComic = async (comicId: number): Promise<void> => {
 };
 
 export const unsaveComic = async (comicId: number): Promise<void> => {
-  await apiRequest(`/api/user/saved/${comicId}`, {
-    method: "DELETE",
+  await apiRequest(`/removeSavedComic`, {
+    method: "POST",
     auth: true,
+    body: JSON.stringify({ comicId }),
   });
 };
