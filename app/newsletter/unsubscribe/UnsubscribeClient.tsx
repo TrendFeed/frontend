@@ -29,10 +29,11 @@ export default function NewsletterUnsubscribePage() {
         // 구독 해지 API 호출
         const unsubscribe = async () => {
             try {
-                await unsubscribeNewsletter(email, token);
+                const response = await unsubscribeNewsletter(email, token);
                 setStatus("success");
                 setMessage(
-                    "You have been successfully unsubscribed from our newsletter."
+                    response.message ||
+                        "You have been successfully unsubscribed from our newsletter."
                 );
             } catch (err: any) {
                 setStatus("error");

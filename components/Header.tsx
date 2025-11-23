@@ -12,6 +12,7 @@ export default function Header() {
   const dispatch = useAppDispatch();
   const searchQuery = useAppSelector((state) => state.comics.searchQuery);
   const userProfile = useAppSelector((state) => state.user.profile);
+  const isAuthenticated = useAppSelector((state) => state.user.isAuthenticated);
   const router = useRouter();
   const { user } = useAuth();
 
@@ -22,7 +23,7 @@ export default function Header() {
     user?.displayName?.charAt(0) ||
     user?.email?.charAt(0) ||
     "?";
-  const isLoggedIn = Boolean(userProfile || user);
+  const isLoggedIn = Boolean(isAuthenticated || userProfile || user);
 
   const handleSettings = () => {
     router.push("/settings");

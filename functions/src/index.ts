@@ -18,6 +18,7 @@ export {
 export {
   newsletterSubscribe,
   newsletterConfirm,
+  newsletterUnsubscribe,
 } from "./newsletter";
 
 export {

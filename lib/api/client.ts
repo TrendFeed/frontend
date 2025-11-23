@@ -68,16 +68,8 @@ export async function apiRequest<T>(
 
   if (!response.ok) {
     const message =
-        json?.error || json?.message || `Request failed with ${response.status}`;
+      json?.error || json?.message || `Request failed with ${response.status}`;
     throw new ApiError(message, response.status, json);
-  }
-
-  // Firebase Functions 일부가 { success: true, data: ... } 형태일 때
-  if (json && typeof json === "object" && "success" in json) {
-    if (json.success) {
-      return json.data as T;
-    }
-    throw new ApiError(json.error || "Unknown API error", response.status, json);
   }
 
   return json as T;

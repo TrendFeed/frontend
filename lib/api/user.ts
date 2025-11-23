@@ -18,8 +18,13 @@ export interface UpdateProfilePayload {
   };
 }
 
-export const verifyUserSession = async (): Promise<UserProfile> => {
-  return apiRequest<UserProfile>("/verifyUserSession", {
+export interface VerifyUserSessionResponse {
+  valid: boolean;
+  uid?: string;
+}
+
+export const verifyUserSession = async (): Promise<VerifyUserSessionResponse> => {
+  return apiRequest<VerifyUserSessionResponse>("/verifyUserSession", {
     method: "POST",
     auth: true,
   });

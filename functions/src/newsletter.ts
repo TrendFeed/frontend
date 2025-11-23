@@ -37,23 +37,42 @@ export const newsletterSubscribe = functions.https.onRequest((req, res) => {
     corsHandler(req, res, async () => {
         try {
             if (req.method !== "POST") {
-                res.status(405).send("Method Not Allowed");
+                res.status(405).json({
+                    success: false,
+                    status: "invalid",
+                    message: "Method Not Allowed",
+                });
                 return;
             }
 
             const { email } = req.body as { email?: string };
             if (!email || typeof email !== "string") {
-                res.status(400).send("Invalid email");
+                res.status(400).json({
+                    success: false,
+                    status: "invalid",
+                    message: "Invalid email",
+                });
                 return;
             }
 
-            console.log("SMTP_USER =", SMTP_USER);
-            console.log("SMTP_PASS =", SMTP_PASS ? "YES" : "NO");
-
             const normalizedEmail = email.trim().toLowerCase();
-            const token = generateToken(24);
-
             const docRef = db.collection(NEWSLETTER_COL).doc(normalizedEmail);
+            const existing = await docRef.get();
+            const existingData = existing.exists ? existing.data() : null;
+            const isActive =
+                existingData &&
+                (existingData.status === "confirmed" || existingData.status === "active");
+
+            if (isActive) {
+                res.status(200).json({
+                    success: true,
+                    status: "active",
+                    message: "You're already subscribed.",
+                });
+                return;
+            }
+
+            const token = generateToken(24);
             const now = admin.firestore.Timestamp.now();
 
             await docRef.set(
@@ -61,8 +80,10 @@ export const newsletterSubscribe = functions.https.onRequest((req, res) => {
                     email: normalizedEmail,
                     token,
                     status: "pending",
-                    createdAt: now,
+                    createdAt: existingData?.createdAt ?? now,
                     confirmedAt: null,
+                    unsubscribedAt: null,
+                    updatedAt: now,
                 },
                 { merge: true }
             );
@@ -93,11 +114,15 @@ export const newsletterSubscribe = functions.https.onRequest((req, res) => {
             res.status(200).json({
                 success: true,
                 status: "pending",
-                message: "Confirmation email sent",
+                message: "We've sent a confirmation link to your email.",
             });
         } catch (err) {
             console.error("newsletterSubscribe error:", err);
-            res.status(500).send("Internal Server Error");
+            res.status(500).json({
+                success: false,
+                status: "error",
+                message: "Internal Server Error",
+            });
         }
     });
 });
@@ -110,14 +135,19 @@ export const newsletterConfirm = functions.https.onRequest((req, res) => {
     corsHandler(req, res, async () => {
         try {
             if (req.method !== "GET") {
-                res.status(405).send("Method Not Allowed");
-                return;
+                return res.status(405).json({
+                    success: false,
+                    message: "Method Not Allowed. Use GET."
+                });
             }
 
-            const { token } = req.body as { token?: string };
+            // ❗ GET에서는 req.query에서 token을 읽어야 함
+            const { token } = req.query as { token?: string };
             if (!token || typeof token !== "string") {
-                res.status(400).send("Invalid token");
-                return;
+                return res.status(400).json({
+                    success: false,
+                    message: "Invalid token",
+                });
             }
 
             const snap = await db
@@ -127,33 +157,131 @@ export const newsletterConfirm = functions.https.onRequest((req, res) => {
                 .get();
 
             if (snap.empty) {
-                res.status(404).send("TOKEN_NOT_FOUND");
-                return;
+                return res.status(404).json({
+                    success: false,
+                    status: "invalid",
+                    message: "TOKEN_NOT_FOUND",
+                });
             }
 
             const doc = snap.docs[0];
             const data = doc.data();
 
-            if (data.status === "confirmed") {
-                res.status(200).json({
+            // 이미 확인된 상태
+            if (data.status === "confirmed" || data.status === "active") {
+                return res.status(200).json({
                     success: true,
-                    message: "Already confirmed",
+                    status: "active",
+                    message: "Your subscription is already active.",
+                });
+            }
+
+            // 최초 확인 처리
+            await doc.ref.update({
+                status: "active",
+                confirmedAt: admin.firestore.Timestamp.now(),
+            });
+
+            return res.status(200).json({
+                success: true,
+                status: "active",
+                message: "Subscription confirmed",
+            });
+
+        } catch (err) {
+            console.error("newsletterConfirm error:", err);
+            return res.status(500).json({
+                success: false,
+                message: "Internal Server Error",
+            });
+        }
+    });
+});
+
+/* ─────────────────────────────────────────────
+ * (3) 구독 해지 API
+ * POST /newsletterUnsubscribe
+ * ────────────────────────────────────────────*/
+export const newsletterUnsubscribe = functions.https.onRequest((req, res) => {
+    corsHandler(req, res, async () => {
+        try {
+            if (req.method !== "POST") {
+                res.status(405).json({
+                    success: false,
+                    status: "invalid",
+                    message: "Method Not Allowed",
                 });
                 return;
             }
 
-            await doc.ref.update({
-                status: "confirmed",
-                confirmedAt: admin.firestore.Timestamp.now(),
+            const { email, token } = req.body as { email?: string; token?: string };
+            if (
+                !email ||
+                typeof email !== "string" ||
+                !token ||
+                typeof token !== "string"
+            ) {
+                res.status(400).json({
+                    success: false,
+                    status: "invalid",
+                    message: "Invalid unsubscribe request",
+                });
+                return;
+            }
+
+            const normalizedEmail = email.trim().toLowerCase();
+            const docRef = db.collection(NEWSLETTER_COL).doc(normalizedEmail);
+            const doc = await docRef.get();
+
+            if (!doc.exists) {
+                res.status(404).json({
+                    success: false,
+                    status: "invalid",
+                    message: "SUBSCRIPTION_NOT_FOUND",
+                });
+                return;
+            }
+
+            const data = doc.data() as {
+                status?: string;
+                token?: string;
+            };
+
+            if (data.token !== token) {
+                res.status(401).json({
+                    success: false,
+                    status: "invalid",
+                    message: "TOKEN_INVALID",
+                });
+                return;
+            }
+
+            if (data.status === "unsubscribed") {
+                res.status(200).json({
+                    success: true,
+                    status: "unsubscribed",
+                    message: "You are already unsubscribed.",
+                });
+                return;
+            }
+
+            await docRef.update({
+                status: "unsubscribed",
+                unsubscribedAt: admin.firestore.Timestamp.now(),
             });
 
             res.status(200).json({
                 success: true,
-                message: "Subscription confirmed",
+                status: "unsubscribed",
+                message: "You have been unsubscribed from TrendFeed emails.",
             });
         } catch (err) {
-            console.error("newsletterConfirm error:", err);
-            res.status(500).send("Internal Server Error");
+            console.error("newsletterUnsubscribe error:", err);
+            res.status(500).json({
+                success: false,
+                status: "error",
+                message: "Internal Server Error",
+            });
         }
     });
 });

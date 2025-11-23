@@ -2,11 +2,19 @@
 
 import { apiRequest } from "@/lib/api/client";
 
-interface NewsletterResponse {
-  email: string;
-  status: string;
-  confirmedAt?: string;
-  unsubscribedAt?: string;
+export type NewsletterStatus =
+  | "pending"
+  | "active"
+  | "unsubscribed"
+  | "invalid"
+  | "error"
+  | string;
+
+export interface NewsletterResponse {
+  success: boolean;
+  status: NewsletterStatus;
+  message: string;
+  error?: string;
 }
 
 export const subscribeToNewsletter = async (

@@ -19,7 +19,7 @@ interface ComicDoc {
     createdAt: admin.firestore.Timestamp | Date | null;
 }
 
-interface ComicResponse {
+export interface ComicResponse {
     id: number;
     repoName: string;
     repoUrl: string;
@@ -32,6 +32,7 @@ interface ComicResponse {
     shares: number;
     comments: any;
     createdAt: Date | null;
+    savedAt?: Date | null;
 }
 
 interface PaginationInfo {
@@ -46,7 +47,7 @@ interface PaginatedResponse<T> {
     pagination: PaginationInfo;
 }
 
-function mapComicDocToResponse(doc: FirebaseFirestore.DocumentSnapshot): ComicResponse {
+export function mapComicDocToResponse(doc: FirebaseFirestore.DocumentSnapshot): ComicResponse {
     const data = doc.data() as ComicDoc;
     let createdAt: Date | null = null;
 

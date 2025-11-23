@@ -2,6 +2,8 @@
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 import cors from "cors";
+import { COMICS_COL } from "./config";
+import { ComicResponse, mapComicDocToResponse } from "./comics";
 
 const corsHandler = cors({ origin: true });
 const db = admin.firestore();
@@ -158,14 +160,56 @@ export const getSavedComics = functions.https.onRequest(async (req, res) => {
                 .limit(limit)
                 .get();
 
-            const items = snapshot.docs.map((d) => d.data());
+            const savedItems = snapshot.docs.map((doc) => {
+                const data = doc.data() as {
+                    comicId?: number;
+                    createdAt?: admin.firestore.Timestamp;
+                };
+
+                const savedAt =
+                    data.createdAt instanceof admin.firestore.Timestamp
+                        ? data.createdAt.toDate()
+                        : null;
+
+                return {
+                    comicId: data.comicId,
+                    savedAt,
+                };
+            });
+
+            const savedComics = await Promise.all(
+                savedItems.map(async (item) => {
+                    if (!item.comicId) {
+                        return null;
+                    }
+
+                    const comicDoc = await db
+                        .collection(COMICS_COL)
+                        .doc(String(item.comicId))
+                        .get();
+
+                    if (!comicDoc.exists) {
+                        return null;
+                    }
+
+                    const comic = mapComicDocToResponse(comicDoc);
+                    return {
+                        ...comic,
+                        savedAt: item.savedAt ?? null,
+                    } as ComicResponse;
+                })
+            );
+
+            const comics = savedComics.filter(
+                (comic): comic is ComicResponse => Boolean(comic)
+            );
 
             const countSnap = await ref.count().get();
             const totalItems = countSnap.data().count;
             const totalPages = Math.ceil(totalItems / limit);
 
             res.status(200).json({
-                data: items,
+                data: comics,
                 pagination: {
                     currentPage: page,
                     totalPages,
