@@ -19,3 +19,7 @@ export {
   newsletterSubscribe,
   newsletterConfirm,
 } from "./newsletter";
+
+export {
+  postComicFromAI
+} from "./ai"

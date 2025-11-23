@@ -47,6 +47,9 @@ export const newsletterSubscribe = functions.https.onRequest((req, res) => {
                 return;
             }
 
+            console.log("SMTP_USER =", SMTP_USER);
+            console.log("SMTP_PASS =", SMTP_PASS ? "YES" : "NO");
+
             const normalizedEmail = email.trim().toLowerCase();
             const token = generateToken(24);
 
