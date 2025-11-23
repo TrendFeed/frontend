@@ -42,3 +42,4 @@ next-env.d.ts
 .firebase
 .firebaserc
 API_SPECIFICATION.md
+firebase_debug.logfirebase-debug.log
