@@ -39,33 +39,61 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
+
     // Firebase 인증 상태 변화 감지
     const unsubscribe = onAuthStateChanged(
       auth,
       async (firebaseUser) => {
+        setLoading(true);
+        setError(null);
+
         try {
-          if (firebaseUser) {
-            await verifyUserSession();
+          if (!firebaseUser) {
+            if (!cancelled) {
+              setUser(null);
+            }
+            return;
+          }
+
+          if (!cancelled) {
             setUser(firebaseUser);
-          } else {
-            setUser(null);
+          }
+
+          try {
+            await verifyUserSession();
+          } catch (err: any) {
+            if (!cancelled) {
+              console.error("verifyUserSession failed:", err);
+              setError(err.message);
+            }
           }
         } catch (err: any) {
-          console.error("Auth state change error:", err);
-          setError(err.message);
+          if (!cancelled) {
+            console.error("Auth state change error:", err);
+            setError(err.message);
+          }
         } finally {
-          setLoading(false);
+          if (!cancelled) {
+            setLoading(false);
+          }
         }
       },
       (err) => {
-        console.error("Auth state observer error:", err);
-        setError(err.message);
-        setLoading(false);
+        if (!cancelled) {
+          console.error("Auth state observer error:", err);
+          setUser(null);
+          setError(err.message);
+          setLoading(false);
+        }
       }
     );
 
     // 컴포넌트 언마운트 시 구독 해제
-    return () => unsubscribe();
+    return () => {
+      cancelled = true;
+      unsubscribe();
+    };
   }, []);
 
   const value = {
