@@ -68,6 +68,8 @@ export default function NewsletterModal() {
       setAgreedToPrivacy(false);
     } catch (err: any) {
       setSubscriptionStatus("error");
+      console.log('error')
+      console.log(err.message)
       setMessage(err.message || "Failed to subscribe. Please try again.");
     } finally {
       setLoading(false);

@@ -31,7 +31,7 @@ function generateToken(length = 24): string {
 
 /* ─────────────────────────────────────────────
  * (1) 구독 신청 API
- * POST /api/newsletter/subscribe
+ * POST /newsletterSubscribe
  * ────────────────────────────────────────────*/
 export const newsletterSubscribe = functions.https.onRequest((req, res) => {
     corsHandler(req, res, async () => {
@@ -92,6 +92,7 @@ export const newsletterSubscribe = functions.https.onRequest((req, res) => {
 
             res.status(200).json({
                 success: true,
+                status: "pending",
                 message: "Confirmation email sent",
             });
         } catch (err) {
@@ -103,12 +104,12 @@ export const newsletterSubscribe = functions.https.onRequest((req, res) => {
 
 /* ─────────────────────────────────────────────
  * (2) 구독 확인 API
- * POST /api/newsletter/confirm
+ * GET /newsletterConfirm
  * ────────────────────────────────────────────*/
 export const newsletterConfirm = functions.https.onRequest((req, res) => {
     corsHandler(req, res, async () => {
         try {
-            if (req.method !== "POST") {
+            if (req.method !== "GET") {
                 res.status(405).send("Method Not Allowed");
                 return;
             }

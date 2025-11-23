@@ -32,6 +32,7 @@ export default function NewsletterConfirmClient() {
                 );
             } catch (err: any) {
                 setStatus("error");
+                console.log(err)
                 setMessage(err.message || "Failed to confirm subscription. Please try again or contact support.");
             }
         };

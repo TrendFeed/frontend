@@ -22,6 +22,7 @@ export default function Header() {
     user?.displayName?.charAt(0) ||
     user?.email?.charAt(0) ||
     "?";
+  const isLoggedIn = Boolean(userProfile || user);
 
   const handleSettings = () => {
     router.push("/settings");
@@ -77,7 +78,7 @@ export default function Header() {
             >
               <Bell className="w-5 h-5 text-[#8B949E] hover:text-[#C9D1D9]" />
             </button>
-            {user ? (
+            {isLoggedIn ? (
               <button
                 className="p-0 w-10 h-10 rounded-full overflow-hidden border border-[#30363D] hover:border-[#58A6FF] transition-colors"
                 aria-label="Profile"
