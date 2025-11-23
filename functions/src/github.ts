@@ -337,7 +337,7 @@ async function crawlAllAndEvaluateInternal(): Promise<void> {
     // created:>=YYYY-MM-DD
     const q = `stars:>=${MIN_STARS}+created:>=${sinceStr}`;
 
-    for (let page = 1; page <= MAX_PAGES; page++) {
+    for (let page = 1; page <= MAX_PAGES; page++) { 
         try {
             const url = `/search/repositories?q=${encodeURIComponent(q)}&sort=stars&order=desc&per_page=${PER_PAGE}&page=${page}`;
             const { body: searchResult } = await githubGetJson(url);
@@ -363,6 +363,8 @@ async function crawlAllAndEvaluateInternal(): Promise<void> {
             break;
         }
     }
+
+    await dispatchCandidatesToAI(1);
 }
 
 // ──────────────────────────────────────────────────────────────
@@ -404,6 +406,89 @@ async function getOldestUngivenCandidatesAndMark(limit: number): Promise<GitHubR
 
     return results;
 }
+
+// ──────────────────────────────────────────────────────────────
+// AI 연동
+// ──────────────────────────────────────────────────────────────
+
+const AI_ENDPOINT =
+  "https://trendfeed-fastapi-441428948783.asia-northeast3.run.app/jobs/from-readme";
+
+/**
+ * repoDoc의 readmeText를 README.md "파일"로 만들어 AI 서버에 전송
+ */
+async function sendReadmeToAI(repo: GitHubRepoDoc): Promise<string | null> {
+  if (!repo.readmeText || repo.readmeText.trim().length === 0) {
+    console.log("[AI] skip: no README", repo.fullName);
+    return null;
+  }
+
+  try {
+    const form = new FormData();
+    const blob = new Blob([repo.readmeText], { type: "text/markdown; charset=utf-8" });
+
+    // 필드명 'file', 파일명 'README.md'
+    form.append("file", blob, "README.md");
+
+    const res = await fetch(AI_ENDPOINT, {
+      method: "POST",
+      body: form,
+    });
+
+    if (!res.ok) {
+      const text = await res.text();
+      console.error("[AI] request failed", repo.fullName, res.status, text);
+      return null;
+    }
+
+    const json = (await res.json()) as any;
+    const jobId = json?.job_id as string | undefined;
+
+    if (!jobId) {
+      console.error("[AI] no job_id in response", repo.fullName, json);
+      return null;
+    }
+
+    console.log("[AI] job created", repo.fullName, jobId);
+    return jobId;
+  } catch (err) {
+    console.error("[AI] sendReadmeToAI error", repo.fullName, err);
+    return null;
+  }
+}
+
+/**
+ * givenToAI=false 후보를 limit개 givenToAI=true,
+ * 각 후보의 README를 AI 서버로 전송
+ */
+async function dispatchCandidatesToAI(limit: number): Promise<void> {
+  const repos = await getOldestUngivenCandidatesAndMark(limit);
+
+  if (repos.length === 0) {
+    console.log("[AI] no candidates to dispatch");
+    return;
+  }
+
+  for (const repo of repos) {
+    try {
+      const jobId = await sendReadmeToAI(repo);
+
+      if (jobId && repo.id) {
+        await db.collection(CANDIDATES_COL).doc(String(repo.id)).set(
+          {
+            aiJobId: jobId,
+            aiRequestedAt: new Date(),
+          },
+          { merge: true }
+        );
+      }
+    } catch (err) {
+      console.error("[AI] dispatch failed for", repo.fullName, err);
+    }
+  }
+}
+
+
 
 // ──────────────────────────────────────────────────────────────
 // HTTP Functions
@@ -448,6 +533,51 @@ export const ingest = functions.https.onRequest(async (req, res) => {
     });
 });
 
+// POST /api/github/force-candidate?fullName=owner/repo
+// 강제 후보 등록(테스트용)
+export const forceCandidate = functions.https.onRequest(async (req, res) => {
+  corsHandler(req, res, async () => {
+    try {
+      if (req.method !== "POST") {
+        res.status(405).send("Method Not Allowed");
+        return;
+      }
+
+      const fullName = req.query.fullName as string | undefined;
+      if (!fullName) {
+        res.status(400).send("Missing fullName param");
+        return;
+      }
+
+      // 1) repo 메타+README까지 강제 수집/업데이트
+      const repoDoc = await upsertAndEvaluate(fullName);
+      if (!repoDoc || !repoDoc.id || !repoDoc.fullName) {
+        res.status(500).send("Failed to ingest repo");
+        return;
+      }
+
+      // 2) candidates에 강제 승격(테스트 목적)
+      const candRef = db.collection(CANDIDATES_COL).doc(String(repoDoc.id));
+      await candRef.set(
+        {
+          repoId: repoDoc.id,
+          fullName: repoDoc.fullName,
+          promotedAt: new Date(),
+          givenToAI: false,
+          forced: true,              // 테스트 표시(선택)
+        } satisfies CandidateDoc & { forced: boolean },
+        { merge: true }
+      );
+
+      res.status(200).send(`forced candidate: ${repoDoc.fullName}`);
+    } catch (err) {
+      console.error("forceCandidate error", err);
+      res.status(500).send("Internal Server Error");
+    }
+  });
+});
+
+
 // POST /api/github/crawl
 export const crawl = functions.https.onRequest(async (req, res) => {
     corsHandler(req, res, async () => {
@@ -489,6 +619,31 @@ export const candidates = functions.https.onRequest(async (req, res) => {
         }
     });
 });
+
+// POST /api/ai/dispatch?limit=9
+// 강제 테스트용
+export const dispatch = functions.https.onRequest(async (req, res) => {
+  corsHandler(req, res, async () => {
+    try {
+      if (req.method !== "POST") {
+        res.status(405).send("Method Not Allowed");
+        return;
+      }
+
+      const limitParam = req.query.limit as string | undefined;
+      let limit = Number(limitParam ?? "9");
+      if (isNaN(limit) || limit <= 0) limit = 9;
+
+      await dispatchCandidatesToAI(limit);
+
+      res.status(200).send(`dispatched ${limit} candidates to AI (see logs)`);
+    } catch (err) {
+      console.error("dispatch error", err);
+      res.status(500).send("Internal Server Error");
+    }
+  });
+});
+
 
 // ──────────────────────────────────────────────────────────────
 // Pub/Sub 스케줄링 (3일마다 전체 크롤)
