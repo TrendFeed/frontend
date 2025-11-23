@@ -23,3 +23,12 @@ export {
 export {
   postComicFromAI
 } from "./ai"
+
+export {
+  verifyUserSession,
+  getUserProfile,
+  updateUserProfile,
+  getSavedComics,
+  saveUserComic,
+  removeSavedComic,
+} from "./user"
