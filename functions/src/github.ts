@@ -412,7 +412,7 @@ async function getOldestUngivenCandidatesAndMark(limit: number): Promise<GitHubR
 // ──────────────────────────────────────────────────────────────
 
 const AI_ENDPOINT =
-  "https://trendfeed-fastapi-441428948783.asia-northeast3.run.app/jobs/from-readme";
+  "https://ai-production-9e83.up.railway.app";
 
 /**
  * repoDoc의 readmeText를 README.md "파일"로 만들어 AI 서버에 전송

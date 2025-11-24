@@ -1,6 +1,6 @@
 // functions/src/index.ts
 // GitHub 크롤 / 후보
-export { ingest, crawl, candidates, crawlScheduled } from "./github";
+export { ingest, crawl, candidates, crawlScheduled , dispatch, forceCandidate } from "./github";
 
 export { seedComics } from "./seed";
 
