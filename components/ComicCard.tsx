@@ -84,6 +84,11 @@ export default function ComicCard({ comic }: ComicCardProps) {
   };
 
   const previewPanel = comic.panels[0];
+  const secondaryPanels = comic.panels.slice(1, 4);
+  const remainingPanels = Math.max(
+    0,
+    comic.panels.length - (1 + secondaryPanels.length)
+  );
 
   return (
       <Link href={`/comic/${comic.id}`}>
@@ -103,12 +108,38 @@ export default function ComicCard({ comic }: ComicCardProps) {
                     alt={`${comic.repoName} preview panel`}
                     fill
                     className="object-cover transition-transform duration-[2200ms] ease-[cubic-bezier(0.19,1,0.22,1)] group-hover/item:scale-110"
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                     unoptimized
                 />
             ) : (
                 <div className="flex h-full items-center justify-center text-[#9CA3AF] text-sm">
                   Preview coming soon
                 </div>
+            )}
+
+            {secondaryPanels.length > 0 && (
+              <div className="absolute bottom-3 left-3 flex items-center gap-2">
+                {secondaryPanels.map((panel, index) => (
+                  <div
+                    key={`${comic.id}-secondary-${index}`}
+                    className="relative w-14 h-9 rounded-md overflow-hidden border border-white/15 shadow-lg shadow-black/30"
+                  >
+                    <Image
+                      src={panel}
+                      alt={`${comic.repoName} panel thumbnail ${index + 2}`}
+                      fill
+                      sizes="56px"
+                      className="object-cover"
+                      unoptimized
+                    />
+                  </div>
+                ))}
+                {remainingPanels > 0 && (
+                  <span className="text-xs font-semibold text-white/90 bg-black/40 px-2.5 py-1 rounded-full backdrop-blur">
+                    +{remainingPanels}
+                  </span>
+                )}
+              </div>
             )}
 
             {comic.isNew && (

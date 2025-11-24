@@ -1,0 +1,30 @@
+<svg width="1200" height="720" viewBox="0 0 1200 720" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="720" rx="32" fill="#0B1320"/>
+  <rect x="40" y="40" width="1120" height="640" rx="28" fill="#111b2f"/>
+  <text x="80" y="140" fill="#73C5FF" font-size="54" font-family="'Inter', 'Pretendard', sans-serif" font-weight="600">
+    LangGraph · Runnable pipelines
+  </text>
+  <text x="80" y="205" fill="#BFD9FF" font-size="28" font-family="'Inter', 'Pretendard', sans-serif">
+    Agents, tools, memory → one interface
+  </text>
+  <rect x="80" y="250" width="1040" height="360" rx="32" fill="#0B1320" stroke="#1F2A44" stroke-width="2"/>
+  <g font-family="'Inter', 'Pretendard', sans-serif" font-size="24" font-weight="500" fill="#C9D1D9">
+    <text x="150" y="330">Retriever</text>
+    <text x="420" y="330">Reasoner</text>
+    <text x="700" y="330">Tool</text>
+    <text x="920" y="330">Memory</text>
+  </g>
+  <g stroke="#73C5FF" stroke-width="6" stroke-linecap="round">
+    <line x1="180" y1="360" x2="900" y2="500" />
+    <line x1="180" y1="500" x2="900" y2="360" />
+  </g>
+  <g fill="#73C5FF">
+    <circle cx="200" cy="360" r="22" />
+    <circle cx="460" cy="420" r="22" />
+    <circle cx="720" cy="380" r="22" />
+    <circle cx="980" cy="460" r="22" />
+  </g>
+  <text x="80" y="640" fill="#8B949E" font-size="24" font-family="'Inter', 'Pretendard', sans-serif">
+    Persistent checkpoints allow pausing workflows mid-node.
+  </text>
+</svg>

@@ -16,12 +16,7 @@ import {
   setError as setComicsError,
 } from "@/lib/redux/slices/comicsSlice";
 import { openNewsletterModal } from "@/lib/redux/slices/uiSlice";
-import {
-  fetchComics,
-  fetchComicsByLanguage,
-  fetchNewComics,
-} from "@/lib/api/comics";
-import { getSavedComics } from "@/lib/api/user";
+import { MOCK_COMICS } from "@/lib/mock/comics";
 import { useAuth } from "@/lib/contexts/AuthContext";
 
 // 홈 클라이언트 컴포넌트
@@ -39,6 +34,10 @@ export default function HomeClient() {
   const loading = useAppSelector((state) => state.comics.loading);
   const error = useAppSelector((state) => state.comics.error);
 
+  /**
+   * TODO: Re-enable the real fetching logic below when the localhost API is ready again.
+   */
+  /*
   useEffect(() => {
     const controller = new AbortController();
 
@@ -104,6 +103,27 @@ export default function HomeClient() {
 
     return () => controller.abort();
   }, [dispatch, activeTab, languageFilter, sortBy, user]);
+  */
+
+  useEffect(() => {
+    dispatch(setComicsLoading(true));
+    dispatch(setComicsError(null));
+
+    const pagination = {
+      currentPage: 1,
+      totalPages: 1,
+      totalItems: MOCK_COMICS.length,
+      itemsPerPage: MOCK_COMICS.length,
+    };
+
+    const timeout = setTimeout(() => {
+      dispatch(setComics(MOCK_COMICS));
+      dispatch(setPagination(pagination));
+      dispatch(setComicsLoading(false));
+    }, 300);
+
+    return () => clearTimeout(timeout);
+  }, [dispatch]);
 
   // newsletter=open → 자동 모달 오픈
   useEffect(() => {
