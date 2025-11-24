@@ -56,18 +56,21 @@ export default function NewsletterModal() {
       const response = await subscribeToNewsletter(email);
 
       if (response.status === "active") {
-        setMessage("You're already subscribed and confirmed!");
+        setMessage(response.message || "You're already subscribed and confirmed!");
         setSubscriptionStatus("subscribed");
       } else {
         setSubscriptionStatus("success");
         setMessage(
-          "Check your email! We've sent you a confirmation link to complete your subscription."
+          response.message ||
+            "Check your email! We've sent you a confirmation link to complete your subscription."
         );
       }
       setEmail("");
       setAgreedToPrivacy(false);
     } catch (err: any) {
       setSubscriptionStatus("error");
+      console.log('error')
+      console.log(err.message)
       setMessage(err.message || "Failed to subscribe. Please try again.");
     } finally {
       setLoading(false);
@@ -96,9 +99,11 @@ export default function NewsletterModal() {
     setLoading(true);
 
     try {
-      await unsubscribeNewsletter(email, token);
-      setSubscriptionStatus("idle");
-      setMessage("You have been unsubscribed successfully.");
+      const response = await unsubscribeNewsletter(email, token);
+      setSubscriptionStatus("success");
+      setMessage(
+        response.message || "You have been unsubscribed successfully."
+      );
       setEmail("");
       setAgreedToPrivacy(false);
     } catch (err: any) {

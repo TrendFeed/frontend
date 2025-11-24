@@ -26,12 +26,14 @@ export default function NewsletterConfirmClient() {
                 const response = await confirmNewsletterSubscription(token);
                 setStatus("success");
                 setMessage(
-                    response.status === "active"
-                        ? "Your subscription is confirmed! You'll start receiving weekly updates."
-                        : "Confirmation received. Please check your inbox for next steps."
+                    response.message ||
+                        (response.status === "active"
+                            ? "Your subscription is confirmed! You'll start receiving weekly updates."
+                            : "Confirmation received. Please check your inbox for next steps.")
                 );
             } catch (err: any) {
                 setStatus("error");
+                console.log(err)
                 setMessage(err.message || "Failed to confirm subscription. Please try again or contact support.");
             }
         };
