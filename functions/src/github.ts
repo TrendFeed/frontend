@@ -371,40 +371,15 @@ async function crawlAllAndEvaluateInternal(): Promise<void> {
 // AI 후보 조회 + givenToAI 표시
 // ──────────────────────────────────────────────────────────────
 
-async function getOldestUngivenCandidatesAndMark(limit: number): Promise<GitHubRepoDoc[]> {
-    if (limit <= 0) limit = 1;
+async function getOldestUngivenCandidatesAndMark(limit: number): Promise<CandidateDoc[]> {
+  const candSnap = await db.collection(CANDIDATES_COL)
+    .where("givenToAI", "==", false)
+    .orderBy("promotedAt", "asc")
+    .limit(limit)
+    .get();
 
-    const candSnap = await db
-        .collection(CANDIDATES_COL)
-        .where("givenToAI", "==", false)
-        .orderBy("promotedAt", "asc")
-        .limit(limit)
-        .get();
-
-    if (candSnap.empty) {
-        return [];
-    }
-
-    const candidateDocs: CandidateDoc[] = [];
-    candSnap.forEach((doc) => {
-        candidateDocs.push(doc.data() as CandidateDoc);
-    });
-
-    // 주는 것으로 표시
-    const batch = db.batch();
-    candSnap.docs.forEach((docRef) => {
-        batch.update(docRef.ref, { givenToAI: true });
-    });
-    await batch.commit();
-
-    // 실제 repo 로딩
-    const results: GitHubRepoDoc[] = [];
-    for (const c of candidateDocs) {
-        const repoDoc = await getRepoDocById(c.repoId);
-        if (repoDoc) results.push(repoDoc);
-    }
-
-    return results;
+  if (candSnap.empty) return [];
+  return candSnap.docs.map(d => d.data() as CandidateDoc);
 }
 
 // ──────────────────────────────────────────────────────────────
@@ -462,31 +437,33 @@ async function sendReadmeToAI(repo: GitHubRepoDoc): Promise<string | null> {
  * 각 후보의 README를 AI 서버로 전송
  */
 async function dispatchCandidatesToAI(limit: number): Promise<void> {
-  const repos = await getOldestUngivenCandidatesAndMark(limit);
-
-  if (repos.length === 0) {
+  const cands = await getOldestUngivenCandidatesAndMark(limit);
+  if (cands.length === 0) {
     console.log("[AI] no candidates to dispatch");
     return;
   }
 
-  for (const repo of repos) {
-    try {
-      const jobId = await sendReadmeToAI(repo);
+  for (const c of cands) {
+    const repo = await getRepoDocById(c.repoId);
+    if (!repo) continue;
 
-      if (jobId && repo.id) {
-        await db.collection(CANDIDATES_COL).doc(String(repo.id)).set(
-          {
-            aiJobId: jobId,
-            aiRequestedAt: new Date(),
-          },
-          { merge: true }
-        );
-      }
-    } catch (err) {
-      console.error("[AI] dispatch failed for", repo.fullName, err);
+    const jobId = await sendReadmeToAI(repo);
+
+    if (jobId) {
+      await db.collection(CANDIDATES_COL).doc(String(c.repoId)).set({
+        givenToAI: true,
+        aiJobId: jobId,
+        aiRequestedAt: new Date(),
+      }, { merge: true });
+    } else {
+      // 실패 기록만 남기고 givenToAI는 false 유지
+      await db.collection(CANDIDATES_COL).doc(String(c.repoId)).set({
+        lastAiErrorAt: new Date(),
+      }, { merge: true });
     }
   }
 }
+
 
 
 
