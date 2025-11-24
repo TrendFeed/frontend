@@ -387,7 +387,7 @@ async function getOldestUngivenCandidatesAndMark(limit: number): Promise<Candida
 // ──────────────────────────────────────────────────────────────
 
 const AI_ENDPOINT =
-  "https://ai-production-9e83.up.railway.app";
+  "https://ai-production-9e83.up.railway.app/generate";
 
 /**
  * repoDoc의 readmeText를 README.md "파일"로 만들어 AI 서버에 전송
@@ -407,7 +407,7 @@ async function sendReadmeToAI(repo: GitHubRepoDoc): Promise<string | null> {
 
     const res = await fetch(AI_ENDPOINT, {
       method: "POST",
-      body: form,
+      body: form,   
     });
 
     if (!res.ok) {
