@@ -625,6 +625,48 @@ export const dispatch = functions.https.onRequest(async (req, res) => {
   });
 });
 
+export async function sendReadmeToAI_Alt(repo: GitHubRepoDoc): Promise<string | null> {
+    if (!repo.readmeText || repo.readmeText.trim().length === 0) {
+        console.log("[AI_ALT] skip: no README", repo.fullName);
+        return null;
+    }
+
+    try {
+        const payload = {
+            readme: repo.readmeText,
+            repoName: repo.fullName ?? repo.name,
+            repoUrl: repo.htmlUrl,
+            stars: repo.stargazersCount ?? null,
+            language: repo.language ?? null,
+        };
+
+        const res = await fetch("grateful-transformation-production-3484.up.railway.app", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+        });
+
+        if (!res.ok) {
+            const text = await res.text();
+            console.error("[AI_ALT] request failed", repo.fullName, res.status, text);
+            return null;
+        }
+
+        const json = (await res.json()) as any;
+        const jobId = json?.jobId as string | undefined;
+
+        if (!jobId) {
+            console.error("[AI_ALT] no jobId in response", repo.fullName, json);
+            return null;
+        }
+
+        console.log("[AI_ALT] job created", repo.fullName, jobId);
+        return jobId;
+    } catch (err) {
+        console.error("[AI_ALT] sendReadmeToAI_Alt error", repo.fullName, err);
+        return null;
+    }
+}
 
 // ──────────────────────────────────────────────────────────────
 // Pub/Sub 스케줄링 (3일마다 전체 크롤)
