@@ -2,6 +2,7 @@
 import { onSchedule } from "firebase-functions/v2/scheduler";
 import * as functions from "firebase-functions";
 import cors from "cors";
+import { onRequest } from "firebase-functions/v2/https";
 
 import {
     db,
@@ -601,10 +602,12 @@ export const candidates = functions.https.onRequest(async (req, res) => {
     });
 });
 
-// POST /api/ai/dispatch?limit=9
-// 강제 테스트용
-export const dispatch = functions.https.onRequest(async (req, res) => {
-  corsHandler(req, res, async () => {
+
+
+// POST /api/ai/dispatch?limit=9 (강제 테스트용)
+export const dispatch = onRequest(
+  { timeoutSeconds: 540, memory: "1GiB", cors: true },
+  async (req, res) => {
     try {
       if (req.method !== "POST") {
         res.status(405).send("Method Not Allowed");
@@ -622,8 +625,8 @@ export const dispatch = functions.https.onRequest(async (req, res) => {
       console.error("dispatch error", err);
       res.status(500).send("Internal Server Error");
     }
-  });
-});
+  }
+);
 
 
 // ──────────────────────────────────────────────────────────────

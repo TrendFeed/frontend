@@ -1,48 +1,59 @@
-// functions/src/ai.ts
-
 import * as functions from "firebase-functions";
-import * as admin from "firebase-admin";
-import { db, COMICS_COL } from "./config";
 import cors from "cors";
 import { randomUUID } from "crypto";
+import { admin, db, COMICS_COL, STORAGE_BUCKET } from "./config";
 
 const corsHandler = cors({ origin: true });
 
-function decodeBase64Image(input: string): { buffer: Buffer; contentType: string; ext: string } {
-  
+function decodeBase64Image(input: string): {
+  buffer: Buffer;
+  contentType: string;
+  ext: string;
+} {
+  // data:image/png;base64,....
   const m = input.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/);
+
   const contentType = m?.[1] ?? "image/png";
   const b64 = m?.[2] ?? input;
 
   const cleaned = b64.replace(/\s+/g, "");
-
   const buffer = Buffer.from(cleaned, "base64");
 
-  // derive extension
   const ext = contentType.split("/")[1]?.toLowerCase() || "png";
   return { buffer, contentType, ext };
 }
 
 /*
  * POST /postComicFromAI
+ * AI -> (base64 panels) -> Storage 업로드 -> Firestore에는 다운로드 URL 저장
  */
 export const postComicFromAI = functions.https.onRequest((req, res) => {
   corsHandler(req, res, async () => {
     try {
+      console.log("[postComicFromAI] invoked", {
+        method: req.method,
+        hasBody: !!req.body,
+        bodyKeys: req.body ? Object.keys(req.body) : [],
+        bucket: STORAGE_BUCKET,
+      });
+
       if (req.method !== "POST") {
         res.status(405).send("Method Not Allowed");
         return;
       }
 
-      const body = req.body ?? {};
-      const { repoName, repoUrl, stars, language, panels, keyInsights } = body as {
+      const body = (req.body ?? {}) as {
+        jobId?: string;
         repoName?: string;
         repoUrl?: string;
         stars?: number;
         language?: string | null;
-        panels?: unknown;
+        panels?: unknown; // string[] expected (base64)
         keyInsights?: string | null;
       };
+
+      const { jobId, repoName, repoUrl, stars, language, panels, keyInsights } =
+        body;
 
       if (!repoName || !repoUrl) {
         res.status(400).send("Missing required fields (repoName, repoUrl)");
@@ -58,14 +69,17 @@ export const postComicFromAI = functions.https.onRequest((req, res) => {
       const comicId = now.toMillis();
       const docRef = db.collection(COMICS_COL).doc(String(comicId));
 
-      const bucket = admin.storage().bucket();
+      const bucket = admin.storage().bucket(STORAGE_BUCKET);
+
       const panelUrls: string[] = [];
 
       for (let i = 0; i < panels.length; i++) {
         const part = panels[i];
 
         if (typeof part !== "string" || part.trim().length === 0) {
-          res.status(400).send(`Invalid panels[${i}] (must be non-empty base64 string)`);
+          res
+            .status(400)
+            .send(`Invalid panels[${i}] (must be non-empty base64 string)`);
           return;
         }
 
@@ -80,7 +94,7 @@ export const postComicFromAI = functions.https.onRequest((req, res) => {
           metadata: {
             contentType,
             metadata: {
-              // Firebase Storage public download URL token
+              // Firebase Storage download URL token
               firebaseStorageDownloadTokens: token,
             },
           },
@@ -94,12 +108,13 @@ export const postComicFromAI = functions.https.onRequest((req, res) => {
       }
 
       const comicDoc = {
-        id: comicId, 
+        id: comicId,
+        jobId: jobId ?? null,
         repoName,
         repoUrl,
         stars: typeof stars === "number" ? stars : 0,
         language: language ?? null,
-        panels: panelUrls,
+        panels: panelUrls, 
         keyInsights: keyInsights ?? null,
         isNew: true,
         likes: 0,
@@ -114,6 +129,7 @@ export const postComicFromAI = functions.https.onRequest((req, res) => {
         success: true,
         message: "Comic posted to Firestore + Storage",
         comicId,
+        bucket: bucket.name,
         panelsCount: panelUrls.length,
       });
     } catch (err) {

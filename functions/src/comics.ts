@@ -337,6 +337,8 @@ export const likeComic = functions.https.onRequest(async (req, res) => {
       res.status(200).json({ success: true });
     } catch (err) {
       console.error("likeComic error", err);
+      
+      
       res.status(500).send("Internal Server Error");
     }
   });
