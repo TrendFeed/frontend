@@ -4,69 +4,121 @@ import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 import { db, COMICS_COL } from "./config";
 import cors from "cors";
+import { randomUUID } from "crypto";
 
 const corsHandler = cors({ origin: true });
 
+function decodeBase64Image(input: string): { buffer: Buffer; contentType: string; ext: string } {
+  
+  const m = input.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/);
+  const contentType = m?.[1] ?? "image/png";
+  const b64 = m?.[2] ?? input;
+
+  const cleaned = b64.replace(/\s+/g, "");
+
+  const buffer = Buffer.from(cleaned, "base64");
+
+  // derive extension
+  const ext = contentType.split("/")[1]?.toLowerCase() || "png";
+  return { buffer, contentType, ext };
+}
+
 /*
  * POST /postComicFromAI
- *
- * Worker → 백엔드에 만화 생성 완료되었음을 notify
- * Firestore COMICS_COL에 새로운 문서로 저장
  */
-
 export const postComicFromAI = functions.https.onRequest((req, res) => {
-    corsHandler(req, res, async () => {
-        try {
-            if (req.method !== "POST") {
-                res.status(405).send("Method Not Allowed");
-                return;
-            }
+  corsHandler(req, res, async () => {
+    try {
+      if (req.method !== "POST") {
+        res.status(405).send("Method Not Allowed");
+        return;
+      }
 
-            const body = req.body;
-            const {
-                repoName,
-                repoUrl,
-                stars,
-                language,
-                panels,         // base64 이미지 배열
-                keyInsights,    // summary or scenario
-            } = body;
+      const body = req.body ?? {};
+      const { repoName, repoUrl, stars, language, panels, keyInsights } = body as {
+        repoName?: string;
+        repoUrl?: string;
+        stars?: number;
+        language?: string | null;
+        panels?: unknown;
+        keyInsights?: string | null;
+      };
 
-            if (!repoName || !repoUrl || !panels) {
-                res.status(400).send("Missing required fields (repoName, repoUrl, panels)");
-                return;
-            }
+      if (!repoName || !repoUrl) {
+        res.status(400).send("Missing required fields (repoName, repoUrl)");
+        return;
+      }
 
-            // Firestore auto-id 기반 정렬 + 중복 방지 위해 id 부여 가능
-            const docRef = db.collection(COMICS_COL).doc();
+      if (!Array.isArray(panels) || panels.length === 0) {
+        res.status(400).send("Missing required fields (panels[])");
+        return;
+      }
 
-            const now = admin.firestore.Timestamp.now();
+      const now = admin.firestore.Timestamp.now();
+      const comicId = now.toMillis();
+      const docRef = db.collection(COMICS_COL).doc(String(comicId));
 
-            const comicDoc = {
-                id: parseInt(docRef.id, 36) || Date.now(),
-                repoName,
-                repoUrl,
-                stars: stars ?? 0,
-                language: language ?? null,
-                panels,
-                keyInsights: keyInsights ?? null,
-                isNew: true,
-                likes: 0,
-                shares: 0,
-                comments: [],
-                createdAt: now,
-            };
+      const bucket = admin.storage().bucket();
+      const panelUrls: string[] = [];
 
-            await docRef.set(comicDoc);
+      for (let i = 0; i < panels.length; i++) {
+        const part = panels[i];
 
-            res.status(200).json({
-                success: true,
-                message: "Comic posted to Firestore",
-                comicId: comicDoc.id,
-            });
-        } catch (err) {
-            console.error("postComicFromAI error:", err);
-            res.status(500).send("Internal Server Error");
+        if (typeof part !== "string" || part.trim().length === 0) {
+          res.status(400).send(`Invalid panels[${i}] (must be non-empty base64 string)`);
+          return;
         }
-    });
+
+        const { buffer, contentType, ext } = decodeBase64Image(part);
+
+        const token = randomUUID();
+        const filePath = `comics/${comicId}/panel_${i}.${ext}`;
+        const file = bucket.file(filePath);
+
+        await file.save(buffer, {
+          resumable: false,
+          metadata: {
+            contentType,
+            metadata: {
+              // Firebase Storage public download URL token
+              firebaseStorageDownloadTokens: token,
+            },
+          },
+        });
+
+        const url =
+          `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/` +
+          `${encodeURIComponent(filePath)}?alt=media&token=${token}`;
+
+        panelUrls.push(url);
+      }
+
+      const comicDoc = {
+        id: comicId, 
+        repoName,
+        repoUrl,
+        stars: typeof stars === "number" ? stars : 0,
+        language: language ?? null,
+        panels: panelUrls,
+        keyInsights: keyInsights ?? null,
+        isNew: true,
+        likes: 0,
+        shares: 0,
+        comments: [],
+        createdAt: now,
+      };
+
+      await docRef.set(comicDoc);
+
+      res.status(200).json({
+        success: true,
+        message: "Comic posted to Firestore + Storage",
+        comicId,
+        panelsCount: panelUrls.length,
+      });
+    } catch (err) {
+      console.error("postComicFromAI error:", err);
+      res.status(500).send("Internal Server Error");
+    }
+  });
 });

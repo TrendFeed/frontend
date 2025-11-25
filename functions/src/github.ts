@@ -399,15 +399,18 @@ async function sendReadmeToAI(repo: GitHubRepoDoc): Promise<string | null> {
   }
 
   try {
-    const form = new FormData();
-    const blob = new Blob([repo.readmeText], { type: "text/markdown; charset=utf-8" });
-
-    // 필드명 'file', 파일명 'README.md'
-    form.append("file", blob, "README.md");
+    const payload = {
+      readme: repo.readmeText,                 // README 원문 문자열 그대로
+      repoName: repo.fullName ?? repo.name,    
+      repoUrl: repo.htmlUrl,                   // GitHub URL
+      stars: repo.stargazersCount ?? null,     // number
+      language: repo.language ?? null,         // string
+    };
 
     const res = await fetch(AI_ENDPOINT, {
       method: "POST",
-      body: form,   
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
     });
 
     if (!res.ok) {
@@ -417,14 +420,15 @@ async function sendReadmeToAI(repo: GitHubRepoDoc): Promise<string | null> {
     }
 
     const json = (await res.json()) as any;
-    const jobId = json?.job_id as string | undefined;
 
+    
+    const jobId = json?.jobId as string | undefined;
     if (!jobId) {
-      console.error("[AI] no job_id in response", repo.fullName, json);
+      console.error("[AI] no jobId in response", repo.fullName, json);
       return null;
     }
 
-    console.log("[AI] job created", repo.fullName, jobId);
+    console.log("[AI] job createddd", repo.fullName, jobId);
     return jobId;
   } catch (err) {
     console.error("[AI] sendReadmeToAI error", repo.fullName, err);
