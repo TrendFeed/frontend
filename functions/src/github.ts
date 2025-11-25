@@ -432,19 +432,10 @@ async function sendReadmeToAI(repo: GitHubRepoDoc): Promise<string | null> {
       language: repo.language ?? null,         // string
     };
 
-    console.log("[AI] will send payload", repo.fullName, {
-    readmeLen: repo.readmeText?.length,
-    repoUrl: repo.htmlUrl,
-    });
-
     const res = await fetch(AI_ENDPOINT, {
       method: "POST",
-<<<<<<< Updated upstream
-      body: form,
-=======
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
->>>>>>> Stashed changes
     });
 
     if (!res.ok) {
