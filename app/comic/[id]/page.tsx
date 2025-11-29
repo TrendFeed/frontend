@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft,
@@ -26,6 +26,7 @@ import {
   fetchComicById,
   fetchComicsByLanguage,
 } from "@/lib/api/comics";
+import KeyInsightsComponent from "@/components/KeyInsights";
 
 export default function ComicDetailPage() {
   const params = useParams();
@@ -254,20 +255,9 @@ export default function ComicDetailPage() {
           )}
         </div>
 
-        {comic.keyInsights.length > 0 && (
-          <div className="mb-8 bg-[#161B22] border border-[#30363D] rounded-lg p-6">
-            <h2 className="text-xl font-bold text-[#C9D1D9] mb-4">
-              Key Insights
-            </h2>
-            <ul className="space-y-3">
-              {comic.keyInsights.map((insight, index) => (
-                <li key={index} className="flex items-start gap-3">
-                  <div className="w-1.5 h-1.5 rounded-full bg-[#58A6FF] mt-2 flex-shrink-0" />
-                  <span className="text-[#8B949E]">{insight}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
+        {/* 🚨 수정할 부분: Key Insights 원본 텍스트를 컴포넌트로 전달 */}
+        {comic.keyInsights && typeof comic.keyInsights === 'string' && (
+            <KeyInsightsComponent insightsText={comic.keyInsights} />
         )}
 
         <div className="flex flex-col sm:flex-row gap-3 mb-12">

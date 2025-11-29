@@ -10,7 +10,7 @@ export interface ComicApiResponse {
   stars: number;
   language: string;
   panels: unknown;
-  keyInsights: string[];
+  keyInsights: string;
   isNew: boolean;
   likes: number;
   shares: number;
@@ -53,9 +53,7 @@ export const mapComicResponse = (payload: ComicApiResponse): Comic => ({
   stars: payload.stars ?? 0,
   language: payload.language || "Unknown",
   panels: normalizePanels(payload.panels),
-  keyInsights: Array.isArray(payload.keyInsights)
-    ? payload.keyInsights
-    : [],
+  keyInsights:  payload.keyInsights,
   isNew: Boolean(payload.isNew),
   likes: payload.likes ?? 0,
   shares: payload.shares ?? 0,

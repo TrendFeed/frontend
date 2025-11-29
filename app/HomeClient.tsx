@@ -84,6 +84,8 @@ export default function HomeClient() {
 
         dispatch(setComics(result.data));
         dispatch(setPagination(result.pagination));
+
+        console.log("Key Insights Data:", result.data[0].keyInsights);
       } catch (err: any) {
         if (err?.name === "AbortError") return;
         console.error("Failed to load comics:", err);
