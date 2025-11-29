@@ -137,13 +137,7 @@ export default function HomeClient() {
       return b.likes + b.shares - (a.likes + a.shares);
     });
 
-    if (activeTab === "forYou") {
-      const newComics = sorted.filter((comic) => comic.isNew);
-      if (newComics.length > 0) {
-        const rest = sorted.filter((comic) => !comic.isNew);
-        return [...newComics, ...rest];
-      }
-    }
+    // TODO: ForYou logic will be implemented later
 
     return sorted;
   }, [

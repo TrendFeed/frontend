@@ -20,8 +20,9 @@ import {
     PENALTY_WEIGHT,
     TREND_THRESHOLD,
 } from "./config";
-
+import { sendNewsletterInternal } from "./newsletter"
 const corsHandler = cors({ origin: true });
+
 
 // ──────────────────────────────────────────────────────────────
 // 유틸 타입
@@ -675,5 +676,130 @@ export async function sendReadmeToAI_Alt(repo: GitHubRepoDoc): Promise<string | 
 export const crawlScheduled = onSchedule("every 72 hours", async (event) => {
     console.log("Scheduled crawl started");
     await crawlAllAndEvaluateInternal();
+    await sendNewsletterForCompletedCandidates();
     console.log("Scheduled crawl finished");
 });
+
+
+// ──────────────────────────────────────────────────────────────
+// AI 작업 완료된 후보 조회 및 뉴스레터 발송
+// ──────────────────────────────────────────────────────────────
+
+
+/**
+ * AI 작업 완료된 후보들을 모아 뉴스레터를 발송합니다.
+ * - promotedAt이 3일 이내인 문서들을 조회합니다.
+ * - 해당 문서의 aiJobId를 사용해 comics 컬렉션에서 comicId와 summary를 찾습니다.
+ */
+async function getCompletedCandidates(limit: number): Promise<(CandidateDoc & { comicId: string, summary: string })[]> {
+    const now = new Date();
+    // 3일(72시간) 전 타임스탬프 계산
+    const threeDaysAgo = new Date(now.getTime() - (3 * 24 * 60 * 60 * 1000));
+
+    // (1) promotedAt이 3일 이내인 후보 문서들을 조회합니다.
+    // 아직 뉴스레터가 발송되지 않은 후보만 조회합니다.
+    const candSnap = await db.collection(CANDIDATES_COL)
+        .where("aiJobId", "!=", null)       // aiJobId가 있는 문서만 (AI 작업 요청된 것)
+        .where("newsletterSentAt", "==", null) // 아직 뉴스레터가 발송되지 않은 것
+        // 🚨 Firestore의 쿼리 제약 때문에 where("promotedAt", ">=", threeDaysAgo)와
+        // orderBy("promotedAt", "asc")를 동시에 사용할 수 없습니다.
+        // 여기서는 promotedAt으로 정렬하고 클라이언트에서 필터링합니다.
+        .orderBy("promotedAt", "desc") // 최신 promotedAt 순서로 정렬 (클라이언트 필터링 효율 높임)
+        .limit(limit * 2) // 필터링을 고려하여 넉넉하게 조회
+        .get();
+
+    if (candSnap.empty) return [];
+
+    const candidatesToProcess: (CandidateDoc & { comicId: string, summary: string })[] = [];
+
+    // (2) 클라이언트 측 필터링 및 AI 작업 완료 확인
+    for (const doc of candSnap.docs) {
+        const data = doc.data() as CandidateDoc & { aiJobId: string, [key: string]: any };
+        const promotedAt = (data.promotedAt as any).toDate() as Date;
+
+        // 3일 이내 승격된 문서만 처리
+        if (promotedAt.getTime() < threeDaysAgo.getTime()) {
+            continue;
+        }
+
+        if (!data.aiJobId) continue; // aiJobId가 없으면 스킵
+
+        // (3) comics 컬렉션에서 aiJobId로 해당 만화 조회
+        const comicSnap = await db.collection("comics")
+            .where("aiJobId", "==", data.aiJobId)
+            .limit(1)
+            .get();
+
+        if (comicSnap.empty) {
+            // 아직 AI 작업이 완료되지 않았거나 comics 문서가 생성되지 않음
+            continue;
+        }
+
+        const comicDoc = comicSnap.docs[0].data();
+        const comicId = comicDoc.id as string; // comics 문서의 ID를 comicId로 사용
+
+        // (4) summary(description)를 repos 컬렉션에서 조회
+        const repoDoc = await db.collection("repos").doc(String(data.repoId)).get();
+        const summary = repoDoc.exists ? (repoDoc.data()?.description ?? "A fascinating new comic.") : "A fascinating new comic.";
+
+
+        // 모든 필수 정보를 가진 후보로 통합
+        candidatesToProcess.push({
+            ...data,
+            comicId: comicId,
+            summary: summary,
+        });
+
+        if (candidatesToProcess.length >= limit) {
+            break;
+        }
+    }
+
+    return candidatesToProcess;
+}
+/**
+ * AI 작업 완료된 후보들을 모아 뉴스레터를 발송하고,
+ * 해당 후보들의 Firestore 문서에 발송 완료 시간을 기록합니다.
+ */
+async function sendNewsletterForCompletedCandidates(): Promise<void> {
+    // 한 번에 너무 많은 이메일을 보내는 것을 방지하기 위해 최대 20개로 제한
+    const completedCands = await getCompletedCandidates(20);
+
+    if (completedCands.length === 0) {
+        console.log("[Newsletter Dispatch] No completed candidates found.");
+        return;
+    }
+
+    const now = new Date();
+    const batch = db.batch();
+
+    for (const c of completedCands) {
+        // 뉴스레터 발송 (sendNewsletterInternal은 newsletter.ts에서 import)
+        try {
+            await sendNewsletterInternal({
+                fullName: c.fullName,
+                comicId: c.comicId,
+                summary: c.summary,
+            });
+
+            // 발송 성공 후, Firestore에 발송 완료 시간 기록
+            const candRef = db.collection(CANDIDATES_COL).doc(String(c.repoId));
+            batch.update(candRef, {
+                newsletterSentAt: now,
+                newsletterSendSuccess: true,
+            });
+        } catch (err) {
+            console.error(`[Newsletter Dispatch] Failed to send for ${c.fullName}`, err);
+            // 실패 시에도 기록을 남기기 위해 실패 시간만 업데이트
+            const candRef = db.collection(CANDIDATES_COL).doc(String(c.repoId));
+            batch.update(candRef, {
+                newsletterSentAt: now,
+                newsletterSendSuccess: false,
+                lastNewsletterError: (err as Error).message,
+            });
+        }
+    }
+
+    await batch.commit();
+    console.log(`[Newsletter Dispatch] Finished processing ${completedCands.length} candidates.`);
+}
