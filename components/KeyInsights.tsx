@@ -52,7 +52,7 @@ paragraphs.forEach(paragraph => {
 });
 
 return (
-    <div className="mb-8 max-w-4xl mx-auto bg-[#161B22] border border-[#30363D] rounded-xl p-6 shadow-lg shadow-black/40">
+    <div className="mb-8 max-w-6xl mx-auto bg-[#161B22] border border-[#30363D] rounded-xl p-6 shadow-lg shadow-black/40">
         <div className="flex items-center gap-3 mb-6 border-b border-[#30363D] pb-3">
             <Lightbulb className="w-6 h-6 text-[#F9A826]" />
             <h2 className="text-2xl font-extrabold text-[#C9D1D9]">Deep Dive Insights</h2>

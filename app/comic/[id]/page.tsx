@@ -188,7 +188,7 @@ export default function ComicDetailPage() {
         </div>
       </header>
 
-      <main className="max-w-4xl mx-auto px-4 py-8">
+      <main className="max-w-6xl mx-auto px-4 py-8">
         <div className="mb-10">
           <div className="flex items-start justify-between gap-4 mb-4">
             <div>
