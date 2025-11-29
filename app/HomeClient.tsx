@@ -16,7 +16,11 @@ import {
   setError as setComicsError,
 } from "@/lib/redux/slices/comicsSlice";
 import { openNewsletterModal } from "@/lib/redux/slices/uiSlice";
-import { MOCK_COMICS } from "@/lib/mock/comics";
+import {
+  fetchComics,
+  fetchComicsByLanguage,
+} from "@/lib/api/comics";
+import { getSavedComics } from "@/lib/api/user";
 import { useAuth } from "@/lib/contexts/AuthContext";
 
 // 홈 클라이언트 컴포넌트
@@ -34,10 +38,6 @@ export default function HomeClient() {
   const loading = useAppSelector((state) => state.comics.loading);
   const error = useAppSelector((state) => state.comics.error);
 
-  /**
-   * TODO: Re-enable the real fetching logic below when the localhost API is ready again.
-   */
-  /*
   useEffect(() => {
     const controller = new AbortController();
 
@@ -46,6 +46,7 @@ export default function HomeClient() {
       dispatch(setComicsError(null));
 
       const mapSort = () => {
+        if (activeTab === "forYou") return "latest";
         if (sortBy === "stars") return "stars";
         if (sortBy === "recent") return "latest";
         return "likes";
@@ -58,6 +59,7 @@ export default function HomeClient() {
           if (!user) {
             dispatch(setComics([]));
             dispatch(setPagination(null));
+            dispatch(setComicsLoading(false));
             return;
           }
           result = await getSavedComics({
@@ -67,12 +69,6 @@ export default function HomeClient() {
           });
         } else if (languageFilter !== "all") {
           result = await fetchComicsByLanguage(languageFilter, {
-            page: 1,
-            limit: 20,
-            signal: controller.signal,
-          });
-        } else if (activeTab === "forYou") {
-          result = await fetchNewComics({
             page: 1,
             limit: 20,
             signal: controller.signal,
@@ -103,27 +99,6 @@ export default function HomeClient() {
 
     return () => controller.abort();
   }, [dispatch, activeTab, languageFilter, sortBy, user]);
-  */
-
-  useEffect(() => {
-    dispatch(setComicsLoading(true));
-    dispatch(setComicsError(null));
-
-    const pagination = {
-      currentPage: 1,
-      totalPages: 1,
-      totalItems: MOCK_COMICS.length,
-      itemsPerPage: MOCK_COMICS.length,
-    };
-
-    const timeout = setTimeout(() => {
-      dispatch(setComics(MOCK_COMICS));
-      dispatch(setPagination(pagination));
-      dispatch(setComicsLoading(false));
-    }, 300);
-
-    return () => clearTimeout(timeout);
-  }, [dispatch]);
 
   // newsletter=open → 자동 모달 오픈
   useEffect(() => {
@@ -134,32 +109,51 @@ export default function HomeClient() {
   }, [searchParams, dispatch]);
 
   const filteredComics = useMemo(() => {
-    return comics
-      .filter((comic) => {
-        if (activeTab === "saved" && !savedComics.includes(comic.id)) {
-          return false;
-        }
-        if (languageFilter !== "all" && comic.language !== languageFilter) {
-          return false;
-        }
-        if (
-          searchQuery &&
-          !comic.repoName.toLowerCase().includes(searchQuery.toLowerCase())
-        ) {
-          return false;
-        }
-        return true;
-      })
-      .sort((a, b) => {
-        if (sortBy === "stars") return b.stars - a.stars;
-        if (sortBy === "recent") {
-          return (
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-          );
-        }
-        return b.likes + b.shares - (a.likes + a.shares);
-      });
-  }, [comics, activeTab, savedComics, languageFilter, searchQuery, sortBy]);
+    const matches = comics.filter((comic) => {
+      if (
+        activeTab === "saved" &&
+        savedComics.length > 0 &&
+        !savedComics.includes(comic.id)
+      ) {
+        return false;
+      }
+      if (languageFilter !== "all" && comic.language !== languageFilter) {
+        return false;
+      }
+      if (
+        searchQuery &&
+        !comic.repoName.toLowerCase().includes(searchQuery.toLowerCase())
+      ) {
+        return false;
+      }
+      return true;
+    });
+
+    const sorted = [...matches].sort((a, b) => {
+      if (sortBy === "stars") return b.stars - a.stars;
+      if (sortBy === "recent") {
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      }
+      return b.likes + b.shares - (a.likes + a.shares);
+    });
+
+    if (activeTab === "forYou") {
+      const newComics = sorted.filter((comic) => comic.isNew);
+      if (newComics.length > 0) {
+        const rest = sorted.filter((comic) => !comic.isNew);
+        return [...newComics, ...rest];
+      }
+    }
+
+    return sorted;
+  }, [
+    comics,
+    activeTab,
+    savedComics,
+    languageFilter,
+    searchQuery,
+    sortBy,
+  ]);
 
   const renderEmptyState = () => (
     <div className="text-center py-20">

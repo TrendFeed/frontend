@@ -23,9 +23,9 @@ import ComicCard from "@/components/ComicCard";
 import { Comic } from "@/lib/types";
 import { useAuth } from "@/lib/contexts/AuthContext";
 import {
-  findMockComicById,
-  getMockComicsByLanguage,
-} from "@/lib/mock/comics";
+  fetchComicById,
+  fetchComicsByLanguage,
+} from "@/lib/api/comics";
 
 export default function ComicDetailPage() {
   const params = useParams();
@@ -46,10 +46,6 @@ export default function ComicDetailPage() {
     return Number.isNaN(parsed) ? null : parsed;
   }, [params]);
 
-  /**
-   * TODO: Restore the networked comic fetching logic below when localhost is available.
-   */
-  /*
   useEffect(() => {
     if (!comicId) {
       setError("Invalid comic id.");
@@ -62,6 +58,7 @@ export default function ComicDetailPage() {
     const loadComic = async () => {
       setLoading(true);
       setError(null);
+
       try {
         const result = await fetchComicById(comicId, controller.signal);
         setComic(result);
@@ -69,17 +66,23 @@ export default function ComicDetailPage() {
         if (result.language) {
           const related = await fetchComicsByLanguage(result.language, {
             page: 1,
-            limit: 4,
+            limit: 8,
             signal: controller.signal,
           });
           setRelatedComics(
             related.data.filter((relatedComic) => relatedComic.id !== result.id)
           );
+        } else {
+          setRelatedComics([]);
         }
-      } catch (err: any) {
-        if (err?.name === "AbortError") return;
+      } catch (err) {
+        if ((err as Error)?.name === "AbortError") return;
         console.error("Failed to load comic:", err);
-        setError(err?.message || "Unable to load this comic.");
+        const message =
+          err instanceof Error && err.message
+            ? err.message
+            : "Unable to load this comic.";
+        setError(message);
       } finally {
         setLoading(false);
       }
@@ -88,36 +91,6 @@ export default function ComicDetailPage() {
     void loadComic();
 
     return () => controller.abort();
-  }, [comicId]);
-  */
-
-  useEffect(() => {
-    if (!comicId) {
-      setError("Invalid comic id.");
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    const result = findMockComicById(comicId);
-    if (!result) {
-      setError("Unable to find this comic in the mock data.");
-      setLoading(false);
-      return;
-    }
-
-    setComic(result);
-    if (result.language) {
-      const related = getMockComicsByLanguage(result.language).filter(
-        (relatedComic) => relatedComic.id !== result.id
-      );
-      setRelatedComics(related);
-    } else {
-      setRelatedComics([]);
-    }
-    setLoading(false);
   }, [comicId]);
 
   const isSaved = comic ? savedComics.includes(comic.id) : false;
@@ -247,25 +220,32 @@ export default function ComicDetailPage() {
 
         <div className="mb-10">
           {comic.panels.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-              {comic.panels.map((panel, index) => (
-                <div
-                  key={panel}
-                  className="group/panel relative aspect-[3/2] bg-[#161B22] rounded-2xl overflow-hidden border border-[#30363D] hover:border-[#58A6FF] shadow-md hover:shadow-2xl"
-                >
-                  <Image
-                    src={panel}
-                    alt={`${comic.repoName} panel ${index + 1}`}
-                    fill
-                    className="object-cover transition-transform duration-700 group-hover/panel:scale-105"
-                    sizes="(max-width: 640px) 90vw, (max-width: 1024px) 45vw, 520px"
-                    unoptimized
-                  />
-                  <span className="absolute top-4 left-4 bg-black/45 backdrop-blur text-xs font-semibold text-white px-2.5 py-1 rounded-full">
-                    #{index + 1}
-                  </span>
-                </div>
-              ))}
+            <div className="relative pt-10">
+              <div className="absolute top-0 left-0 inline-flex items-center gap-2 rounded-full border border-[#30363D] bg-[#0D1117] px-3 py-1 text-xs font-semibold uppercase tracking-wide text-[#8B949E]">
+                <span className="text-[#58A6FF]">읽는 순서</span>
+                <span>↘</span>
+                <span className="text-[#8B949E]/80">왼쪽에서 오른쪽</span>
+              </div>
+              <div className="grid grid-cols-2 auto-rows-[minmax(0,1fr)] gap-5">
+                {comic.panels.map((panel, index) => (
+                  <div
+                    key={panel}
+                    className="group/panel relative aspect-[3/2] bg-[#161B22] rounded-2xl overflow-hidden border border-[#30363D] hover:border-[#58A6FF] shadow-md hover:shadow-2xl"
+                  >
+                    <Image
+                      src={panel}
+                      alt={`${comic.repoName} panel ${index + 1}`}
+                      fill
+                      className="object-cover transition-transform duration-700 group-hover/panel:scale-105"
+                      sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 360px"
+                      unoptimized
+                    />
+                    <span className="absolute top-4 left-4 bg-black/45 backdrop-blur text-xs font-semibold text-white px-2.5 py-1 rounded-full">
+                      #{index + 1}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           ) : (
             <div className="rounded-2xl border border-dashed border-[#30363D] bg-[#161B22] p-10 text-center text-[#8B949E]">
@@ -311,8 +291,8 @@ export default function ComicDetailPage() {
             <h2 className="text-2xl font-bold text-[#C9D1D9] mb-6">
               More {comic.language} Comics
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {relatedComics.slice(0, 3).map((relatedComic) => (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {relatedComics.slice(0, 8).map((relatedComic) => (
                 <ComicCard key={relatedComic.id} comic={relatedComic} />
               ))}
             </div>
