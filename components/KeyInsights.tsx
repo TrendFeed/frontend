@@ -22,7 +22,7 @@ const structuredContent: { type: "heading" | "list" | "paragraph"; content: stri
 paragraphs.forEach(paragraph => {
     const lines = paragraph.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
     const titleRegex = /^(.*?)\s*[:\u2013\u2014-]\s*/;
-    let titleMatch = lines[0].match(titleRegex);
+    const titleMatch = lines[0].match(titleRegex);
 
     if (titleMatch) {
         const title = titleMatch[1].trim();
