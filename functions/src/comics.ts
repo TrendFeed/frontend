@@ -8,12 +8,15 @@ const corsHandler = cors({ origin: true });
 type PanelsType = string[]; 
 
 interface ComicDoc {
+  
   id: number;
   repoName: string;
   repoUrl: string;
   stars: number;
   language?: string | null;
   panels: PanelsType | any; 
+  title?: string | null;
+  category?: string | null;
   keyInsights?: string | null;
   isNew: boolean;
   likes: number;
@@ -29,6 +32,8 @@ export interface ComicResponse {
   stars: number;
   language?: string | null;
   panels: PanelsType | any; // 레거시 호환
+  title?: string | null;
+  category?: string | null;
   keyInsights?: string | null;
   isNew: boolean;
   likes: number;
@@ -89,6 +94,8 @@ export function mapComicDocToResponse(
     stars: data.stars,
     language: data.language ?? null,
     panels: data.panels,
+    title: data.title ?? null,
+    category: data.category ?? null,
     keyInsights: data.keyInsights ?? null,
     isNew: data.isNew,
     likes: data.likes,

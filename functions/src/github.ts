@@ -4,6 +4,7 @@ import * as functions from "firebase-functions";
 import cors from "cors";
 import { onRequest } from "firebase-functions/v2/https";
 
+
 import {
     db,
     GITHUB_TOKEN,
@@ -336,7 +337,7 @@ async function crawlAllAndEvaluateInternal(): Promise<void> {
     const sinceStr = sinceDate.toISOString().slice(0, 10); // YYYY-MM-DD
 
     // created:>=YYYY-MM-DD
-    const q = `stars:>=${MIN_STARS}+created:>=${sinceStr}`;
+    const q = `stars:>=${MIN_STARS} created:>=${sinceStr}`;
 
     for (let page = 1; page <= MAX_PAGES; page++) { 
         try {
@@ -560,24 +561,32 @@ export const forceCandidate = functions.https.onRequest(async (req, res) => {
 });
 
 
-// POST /api/github/crawl
-export const crawl = functions.https.onRequest(async (req, res) => {
+// POST /api/github/crawl  (Gen2, up to 1 hour)
+export const crawl = onRequest(
+  {
+    timeoutSeconds: 3600,
+    memory: "2GiB",         
+    cors: true,
+    region: "us-central1",   
+  },
+  async (req, res) => {
     corsHandler(req, res, async () => {
-        try {
-            if (req.method !== "POST") {
-                res.status(405).send("Method Not Allowed");
-                return;
-            }
-
-            await crawlAllAndEvaluateInternal();
-
-            res.status(200).send("crawl started and finished (see logs)");
-        } catch (err: any) {
-            console.error("crawl error", err);
-            res.status(500).send("Internal Server Error");
+      try {
+        if (req.method !== "POST") {
+          res.status(405).send("Method Not Allowed");
+          return;
         }
+
+        await crawlAllAndEvaluateInternal();
+
+        res.status(200).send("crawl finished (see logs)");
+      } catch (err: any) {
+        console.error("crawl error", err);
+        res.status(500).send("Internal Server Error");
+      }
     });
-});
+  }
+);
 
 // GET /api/ai/candidates?limit=3
 export const candidates = functions.https.onRequest(async (req, res) => {
@@ -633,7 +642,7 @@ export const dispatch = onRequest(
 // Pub/Sub 스케줄링 (3일마다 전체 크롤)
 // ──────────────────────────────────────────────────────────────
 
-export const crawlScheduled = onSchedule("every 72 hours", async (event) => {
+export const crawlScheduled = onSchedule("every 48 hours", async (event) => {
     console.log("Scheduled crawl started");
     await crawlAllAndEvaluateInternal();
     console.log("Scheduled crawl finished");

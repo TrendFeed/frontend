@@ -5,14 +5,8 @@ import { admin, db, COMICS_COL, STORAGE_BUCKET } from "./config";
 
 const corsHandler = cors({ origin: true });
 
-function decodeBase64Image(input: string): {
-  buffer: Buffer;
-  contentType: string;
-  ext: string;
-} {
-  // data:image/png;base64,....
+function decodeBase64Image(input: string): { buffer: Buffer; contentType: string; ext: string } {
   const m = input.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,(.+)$/);
-
   const contentType = m?.[1] ?? "image/png";
   const b64 = m?.[2] ?? input;
 
@@ -25,7 +19,7 @@ function decodeBase64Image(input: string): {
 
 /*
  * POST /postComicFromAI
- * AI -> (base64 panels) -> Storage 업로드 -> Firestore에는 다운로드 URL 저장
+ * AI -> (base64 panels + title/category) -> Storage 업로드 -> Firestore에는 다운로드 URL 저장
  */
 export const postComicFromAI = functions.https.onRequest((req, res) => {
   corsHandler(req, res, async () => {
@@ -34,7 +28,7 @@ export const postComicFromAI = functions.https.onRequest((req, res) => {
         method: req.method,
         hasBody: !!req.body,
         bodyKeys: req.body ? Object.keys(req.body) : [],
-        bucket: STORAGE_BUCKET,
+        bucketConfigured: STORAGE_BUCKET,
       });
 
       if (req.method !== "POST") {
@@ -48,12 +42,15 @@ export const postComicFromAI = functions.https.onRequest((req, res) => {
         repoUrl?: string;
         stars?: number;
         language?: string | null;
-        panels?: unknown; // string[] expected (base64)
+        panels?: unknown;
         keyInsights?: string | null;
+
+        // ✅ 추가: AI가 만들어서 보내줄 값
+        title?: string | null;
+        category?: string | null;
       };
 
-      const { jobId, repoName, repoUrl, stars, language, panels, keyInsights } =
-        body;
+      const { jobId, repoName, repoUrl, stars, language, panels, keyInsights, title, category } = body;
 
       if (!repoName || !repoUrl) {
         res.status(400).send("Missing required fields (repoName, repoUrl)");
@@ -69,7 +66,9 @@ export const postComicFromAI = functions.https.onRequest((req, res) => {
       const comicId = now.toMillis();
       const docRef = db.collection(COMICS_COL).doc(String(comicId));
 
-      const bucket = admin.storage().bucket(STORAGE_BUCKET);
+      // ✅ 기본 버킷 사용(InitializeApp의 storageBucket 설정을 신뢰)
+      // 필요 시 bucket.name으로 실제 버킷 확인 가능
+      const bucket = admin.storage().bucket();
 
       const panelUrls: string[] = [];
 
@@ -77,9 +76,7 @@ export const postComicFromAI = functions.https.onRequest((req, res) => {
         const part = panels[i];
 
         if (typeof part !== "string" || part.trim().length === 0) {
-          res
-            .status(400)
-            .send(`Invalid panels[${i}] (must be non-empty base64 string)`);
+          res.status(400).send(`Invalid panels[${i}] (must be non-empty base64 string)`);
           return;
         }
 
@@ -94,7 +91,6 @@ export const postComicFromAI = functions.https.onRequest((req, res) => {
           metadata: {
             contentType,
             metadata: {
-              // Firebase Storage download URL token
               firebaseStorageDownloadTokens: token,
             },
           },
@@ -114,7 +110,12 @@ export const postComicFromAI = functions.https.onRequest((req, res) => {
         repoUrl,
         stars: typeof stars === "number" ? stars : 0,
         language: language ?? null,
-        panels: panelUrls, 
+
+        // ✅ 저장
+        title: title ?? null,
+        category: category ?? null,
+
+        panels: panelUrls,
         keyInsights: keyInsights ?? null,
         isNew: true,
         likes: 0,
@@ -131,6 +132,8 @@ export const postComicFromAI = functions.https.onRequest((req, res) => {
         comicId,
         bucket: bucket.name,
         panelsCount: panelUrls.length,
+        savedTitle: comicDoc.title,
+        savedCategory: comicDoc.category,
       });
     } catch (err) {
       console.error("postComicFromAI error:", err);
