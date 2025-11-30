@@ -9,6 +9,7 @@ import {
   Download,
   Bookmark,
   Mail,
+  Loader2,
 } from "lucide-react";
 import Image from "next/image";
 import { useAppDispatch, useAppSelector } from "@/lib/redux/hooks";
@@ -20,6 +21,12 @@ import { openShareModal, openNewsletterModal } from "@/lib/redux/slices/uiSlice"
 import ShareModal from "@/components/ShareModal";
 import NewsletterModal from "@/components/NewsletterModal";
 import ComicCard from "@/components/ComicCard";
+import {
+  fetchComicById,
+  fetchComicsByLanguage,
+  shareComic,
+} from "@/lib/api/comics";
+import { saveComic, unsaveComic } from "@/lib/api/user";
 import { Comic } from "@/lib/types";
 import { useAuth } from "@/lib/contexts/AuthContext";
 import {
@@ -96,32 +103,42 @@ export default function ComicDetailPage() {
 
   const isSaved = comic ? savedComics.includes(comic.id) : false;
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!comic) return;
     if (!user) {
       alert("Please log in to save comics.");
       return;
     }
 
-    if (isSaved) {
-      dispatch(removeSavedComicId(comic.id));
-    } else {
-      dispatch(addSavedComicId(comic.id));
+    try {
+      if (isSaved) {
+        await unsaveComic(comic.id);
+        dispatch(removeSavedComicId(comic.id));
+      } else {
+        await saveComic(comic.id);
+        dispatch(addSavedComicId(comic.id));
+      }
+    } catch (err) {
+      console.error("Failed to toggle saved comic:", err);
+      alert("Unable to update saved comics right now.");
     }
   };
 
-  const handleShare = () => {
+  const handleShare = async () => {
     if (!comic) return;
-    setComic((prev) =>
-      prev ? { ...prev, shares: prev.shares + 1 } : prev
-    );
+    try {
+      await shareComic(comic.id);
+    } catch (err) {
+      console.error("Failed to record share:", err);
+    }
     dispatch(openShareModal(comic));
   };
 
-  if (loading) {
+  if (loading || (!comic && !error)) {
     return (
-      <div className="min-h-screen bg-[#0D1117] flex items-center justify-center text-[#8B949E]">
-        Loading comic...
+      <div className="min-h-screen bg-[#0D1117] flex flex-col items-center justify-center gap-4 text-[#8B949E]">
+        <Loader2 className="w-10 h-10 animate-spin text-[#58A6FF]" />
+        <p className="text-sm uppercase tracking-[0.2em]">Loading comic...</p>
       </div>
     );
   }
@@ -143,6 +160,8 @@ export default function ComicDetailPage() {
       </div>
     );
   }
+
+  const hasPanels = comic.panels.length > 0;
 
   return (
     <div className="min-h-screen bg-[#0D1117]">
@@ -192,10 +211,13 @@ export default function ComicDetailPage() {
         <div className="mb-10">
           <div className="flex items-start justify-between gap-4 mb-4">
             <div>
-              <h1 className="text-4xl font-bold text-[#C9D1D9] mb-3">
+              <p className="uppercase text-sm tracking-widest text-[#8B949E] mb-2">
+                Featured Comic
+              </p>
+              <h1 className="text-4xl font-bold text-[#C9D1D9] mb-3 leading-tight">
                 {comic.repoName}
               </h1>
-              <div className="flex items-center gap-3 flex-wrap">
+              <div className="flex flex-wrap items-center gap-3">
                 <span className="text-sm bg-[#58A6FF]/10 text-[#58A6FF] font-semibold px-4 py-1.5 rounded-full">
                   {comic.language}
                 </span>
@@ -210,14 +232,34 @@ export default function ComicDetailPage() {
                   {comic.stars.toLocaleString()} stars
                 </span>
                 {comic.isNew && (
-                  <span className="bg-[#3FB950] text-white text-xs font-semibold px-3 py-1.5 rounded-full shadow-md animate-pulse">
+                  <span className="bg-[#3FB950] text-white text-xs font-semibold px-3 py-1.5 rounded-full shadow-md">
                     NEW
                   </span>
                 )}
               </div>
             </div>
+            <div className="flex items-center gap-4 text-sm text-[#8B949E]">
+              <div className="text-center">
+                <p className="text-lg font-semibold text-[#C9D1D9]">
+                  {comic.likes.toLocaleString()}
+                </p>
+                <p>Likes</p>
+              </div>
+              <div className="text-center">
+                <p className="text-lg font-semibold text-[#C9D1D9]">
+                  {comic.shares.toLocaleString()}
+                </p>
+                <p>Shares</p>
+              </div>
+              <div className="text-center">
+                <p className="text-lg font-semibold text-[#C9D1D9]">
+                  {comic.comments.toLocaleString()}
+                </p>
+                <p>Comments</p>
+              </div>
+            </div>
           </div>
-        </div>
+        </section>
 
         <div className="mb-10">
           {comic.panels.length > 0 ? (
@@ -260,21 +302,67 @@ export default function ComicDetailPage() {
             <KeyInsightsComponent insightsText={comic.keyInsights} />
         )}
 
-        <div className="flex flex-col sm:flex-row gap-3 mb-12">
-          <a
-            href={comic.repoUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 bg-[#58A6FF] text-white px-6 py-3 rounded-lg hover:bg-[#4A96E6] hover:cursor-pointer transition-colors font-medium"
-          >
-            <ExternalLink className="w-5 h-5" />
-            View on GitHub
-          </a>
-          <button className="flex items-center justify-center gap-2 bg-[#161B22] text-[#C9D1D9] border border-[#30363D] px-6 py-3 rounded-lg hover:border-[#58A6FF] hover:cursor-pointer transition-colors font-medium">
-            <Download className="w-5 h-5" />
-            Download Comic
-          </button>
-        </div>
+          <div className="space-y-6">
+            <div className="bg-[#161B22] border border-[#30363D] rounded-2xl p-6">
+              <h2 className="text-lg font-semibold text-[#C9D1D9] mb-4">
+                Project Overview
+              </h2>
+              <div className="space-y-3 text-sm text-[#8B949E]">
+                <p>
+                  Dive into the latest snapshot of{" "}
+                  <span className="text-[#C9D1D9] font-semibold">
+                    {comic.repoName}
+                  </span>
+                  . Each panel captures a key moment from the repository&apos;s
+                  journey.
+                </p>
+                {comic.createdAt && (
+                  <p>
+                    Created:{" "}
+                    <span className="text-[#C9D1D9]">
+                      {new Date(comic.createdAt).toLocaleDateString()}
+                    </span>
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {comic.keyInsights.length > 0 && (
+              <div className="bg-[#161B22] border border-[#30363D] rounded-2xl p-6">
+                <h2 className="text-lg font-semibold text-[#C9D1D9] mb-4">
+                  Key Insights
+                </h2>
+                <ul className="space-y-3">
+                  {comic.keyInsights.map((insight, index) => (
+                    <li key={index} className="flex items-start gap-3">
+                      <div className="w-1.5 h-1.5 rounded-full bg-[#58A6FF] mt-2 flex-shrink-0" />
+                      <span className="text-[#8B949E]">{insight}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            <div className="bg-[#161B22] border border-[#30363D] rounded-2xl p-6 space-y-4">
+              <h2 className="text-lg font-semibold text-[#C9D1D9]">
+                Actions
+              </h2>
+              <a
+                href={comic.repoUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 bg-[#58A6FF] text-white px-4 py-3 rounded-lg hover:bg-[#4A96E6] hover:cursor-pointer transition-colors font-medium"
+              >
+                <ExternalLink className="w-5 h-5" />
+                View on GitHub
+              </a>
+              <button className="flex items-center justify-center gap-2 w-full bg-[#0D1117] text-[#C9D1D9] border border-[#30363D] px-4 py-3 rounded-lg hover:border-[#58A6FF] hover:cursor-pointer transition-colors font-medium">
+                <Download className="w-5 h-5" />
+                Download Comic
+              </button>
+            </div>
+          </div>
+        </section>
 
         {relatedComics.length > 0 && (
           <div>
