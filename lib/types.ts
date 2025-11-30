@@ -5,7 +5,7 @@ export interface Comic {
   stars: number;
   language: string;
   panels: string[];
-  keyInsights: string[];
+  keyInsights: string;
   isNew: boolean;
   likes: number;
   shares: number;

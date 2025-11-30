@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft,
@@ -29,6 +29,11 @@ import {
 import { saveComic, unsaveComic } from "@/lib/api/user";
 import { Comic } from "@/lib/types";
 import { useAuth } from "@/lib/contexts/AuthContext";
+import {
+  fetchComicById,
+  fetchComicsByLanguage,
+} from "@/lib/api/comics";
+import KeyInsightsComponent from "@/components/KeyInsights";
 
 export default function ComicDetailPage() {
   const params = useParams();
@@ -61,6 +66,7 @@ export default function ComicDetailPage() {
     const loadComic = async () => {
       setLoading(true);
       setError(null);
+
       try {
         const result = await fetchComicById(comicId, controller.signal);
         setComic(result);
@@ -68,17 +74,23 @@ export default function ComicDetailPage() {
         if (result.language) {
           const related = await fetchComicsByLanguage(result.language, {
             page: 1,
-            limit: 4,
+            limit: 8,
             signal: controller.signal,
           });
           setRelatedComics(
             related.data.filter((relatedComic) => relatedComic.id !== result.id)
           );
+        } else {
+          setRelatedComics([]);
         }
-      } catch (err: any) {
-        if (err?.name === "AbortError") return;
+      } catch (err) {
+        if ((err as Error)?.name === "AbortError") return;
         console.error("Failed to load comic:", err);
-        setError(err?.message || "Unable to load this comic.");
+        const message =
+          err instanceof Error && err.message
+            ? err.message
+            : "Unable to load this comic.";
+        setError(message);
       } finally {
         setLoading(false);
       }
@@ -195,9 +207,9 @@ export default function ComicDetailPage() {
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-4 py-8">
-        <section className="mb-10">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <main className="max-w-6xl mx-auto px-4 py-8">
+        <div className="mb-10">
+          <div className="flex items-start justify-between gap-4 mb-4">
             <div>
               <p className="uppercase text-sm tracking-widest text-[#8B949E] mb-2">
                 Featured Comic
@@ -249,51 +261,46 @@ export default function ComicDetailPage() {
           </div>
         </section>
 
-        <section className="grid gap-8 lg:grid-cols-[2fr,1fr] mb-12">
-          <div className="space-y-6">
-            {hasPanels ? (
-              <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                  {comic.panels.map((panel, index) => (
-                    <div
-                      key={`${panel}-${index}`}
-                      className="group relative overflow-hidden border border-[#30363D] bg-[#161B22] rounded-2xl aspect-[4/5] shadow-lg transition-all hover:border-[#58A6FF] hover:-translate-y-1"
-                    >
-                      <Image
-                        src={panel}
-                        alt={`${comic.repoName} panel ${index + 1}`}
-                        fill
-                        className="object-cover"
-                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 520px"
-                        priority={index === 0}
-                        unoptimized
-                      />
-                      <span className="absolute left-3 top-3 text-xs font-semibold text-white/90 bg-black/55 px-3 py-1 rounded-full tracking-wide">
-                        Panel {index + 1}
-                      </span>
-                      <div className="pointer-events-none absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-t from-black/60 via-transparent" />
-                    </div>
-                  ))}
-                </div>
-
-                <div className="flex flex-wrap justify-center gap-2 pt-4">
-                  {comic.panels.map((_, index) => (
-                    <div
-                      key={`indicator-${index}`}
-                      className="w-2.5 h-2.5 rounded-full bg-[#30363D] transition-colors duration-200"
-                      style={{
-                        backgroundColor: index === 0 ? "#58A6FF" : "#30363D",
-                      }}
-                    />
-                  ))}
-                </div>
-              </>
-            ) : (
-              <div className="rounded-2xl border border-dashed border-[#30363D] bg-[#161B22] p-10 text-center text-[#8B949E]">
-                Panels will be available soon.
+        <div className="mb-10">
+          {comic.panels.length > 0 ? (
+            <div className="relative pt-10">
+              <div className="absolute top-0 left-0 inline-flex items-center gap-2 rounded-full border border-[#30363D] bg-[#0D1117] px-3 py-1 text-xs font-semibold uppercase tracking-wide text-[#8B949E]">
+                <span className="text-[#58A6FF]">읽는 순서</span>
+                <span>↘</span>
+                <span className="text-[#8B949E]/80">왼쪽에서 오른쪽</span>
               </div>
-            )}
-          </div>
+              <div className="grid grid-cols-2 auto-rows-[minmax(0,1fr)] gap-5">
+                {comic.panels.map((panel, index) => (
+                  <div
+                    key={panel}
+                    className="group/panel relative aspect-[3/2] bg-[#161B22] rounded-2xl overflow-hidden border border-[#30363D] hover:border-[#58A6FF] shadow-md hover:shadow-2xl"
+                  >
+                    <Image
+                      src={panel}
+                      alt={`${comic.repoName} panel ${index + 1}`}
+                      fill
+                      className="object-cover transition-transform duration-700 group-hover/panel:scale-105"
+                      sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 360px"
+                      unoptimized
+                    />
+                    <span className="absolute top-4 left-4 bg-black/45 backdrop-blur text-xs font-semibold text-white px-2.5 py-1 rounded-full">
+                      #{index + 1}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-dashed border-[#30363D] bg-[#161B22] p-10 text-center text-[#8B949E]">
+              Panels will be available soon.
+            </div>
+          )}
+        </div>
+
+        {/* 🚨 수정할 부분: Key Insights 원본 텍스트를 컴포넌트로 전달 */}
+        {comic.keyInsights && typeof comic.keyInsights === 'string' && (
+            <KeyInsightsComponent insightsText={comic.keyInsights} />
+        )}
 
           <div className="space-y-6">
             <div className="bg-[#161B22] border border-[#30363D] rounded-2xl p-6">
@@ -362,8 +369,8 @@ export default function ComicDetailPage() {
             <h2 className="text-2xl font-bold text-[#C9D1D9] mb-6">
               More {comic.language} Comics
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {relatedComics.slice(0, 3).map((relatedComic) => (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {relatedComics.slice(0, 8).map((relatedComic) => (
                 <ComicCard key={relatedComic.id} comic={relatedComic} />
               ))}
             </div>

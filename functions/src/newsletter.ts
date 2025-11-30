@@ -12,6 +12,7 @@ const corsHandler = cors({ origin: true });
 
 // Firestore 컬렉션
 const NEWSLETTER_COL = "newsletter_subscriptions";
+const NOTIFICATION_COL = "notifications";
 
 // Nodemailer 설정
 const transporter = nodemailer.createTransport({
@@ -285,3 +286,73 @@ export const newsletterUnsubscribe = functions.https.onRequest((req, res) => {
         }
     });
 });
+
+// ─────────────────────────────────────────────
+// INTERNAL: 뉴스레터 발송 함수
+// ─────────────────────────────────────────────
+export async function sendNewsletterInternal(params: {
+    fullName: string;
+    comicId: string;
+    summary: string;
+}) {
+    const { fullName, comicId, summary } = params;
+
+    // 활성 구독자만 조회
+    const subsSnap = await db
+        .collection(NEWSLETTER_COL)
+        .where("status", "==", "active")
+        .where("unsubscribedAt", "==", null)
+        .get();
+
+    if (subsSnap.empty) {
+        console.log("[Newsletter] No active subscribers.");
+        return;
+    }
+
+    const batch = db.batch();
+    const subscribers = subsSnap.docs.map((d) => d.id);
+
+    // Firestore notifications 생성
+    for (const email of subscribers) {
+        const ref = db.collection(NOTIFICATION_COL).doc();
+        batch.set(ref, {
+            id: ref.id,
+            email,
+            title: `New trending comic: ${fullName}`,
+            description: summary,
+            comicId,
+            timestamp: Date.now(),
+            read: false,
+            actionLabel: "View comic",
+            actionHref: `/comic/${comicId}`,
+            category: "newsletter",
+        });
+    }
+
+    await batch.commit();
+
+    // 이메일 발송
+    for (const email of subscribers) {
+        await transporter.sendMail({
+            from: `"TrendFeed Newsletter" <${SMTP_USER}>`,
+            to: email,
+            subject: `[TrendFeed] New comic is ready: ${fullName}`,
+            html: `
+        <h2>${fullName} Comic is Live! 🎉</h2>
+        <p>${summary}</p>
+        <p>
+          <a href="https://trendfeed.kr/comic/${comicId}" style="
+            display:inline-block;
+            padding:12px 24px;
+            background:#2563eb;
+            color:#fff;
+            border-radius:6px;
+            text-decoration:none;
+          ">만화 보러가기</a>
+        </p>
+      `,
+        });
+    }
+
+    console.log(`[Newsletter] Sent to ${subscribers.length} subscribers.`);
+}

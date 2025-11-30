@@ -6,7 +6,6 @@ import {
   setLanguageFilter,
   setSortBy,
 } from "@/lib/redux/slices/comicsSlice";
-import { languages } from "@/lib/mockData";
 import { SortType, LanguageFilter } from "@/lib/types";
 
 // 필터 바 컴포넌트 - 언어 및 정렬 옵션 제공
@@ -14,7 +13,16 @@ export default function FilterBar() {
   const dispatch = useAppDispatch();
   const languageFilter = useAppSelector((state) => state.comics.languageFilter);
   const sortBy = useAppSelector((state) => state.comics.sortBy);
-
+  const languages = [
+    "all",
+    "TypeScript",
+    "JavaScript",
+    "Python",
+    "Rust",
+    "Go",
+    "Java",
+    "C++",
+  ];
   return (
     <div className="flex items-center gap-3 mb-6">
       {/* 언어 필터 드롭다운 */}

@@ -1,6 +1,7 @@
 // Firebase 설정 파일
 import { initializeApp, getApps, FirebaseApp } from "firebase/app";
 import { getAuth, Auth } from "firebase/auth";
+import { getFirestore, Firestore } from "firebase/firestore";
 
 // Firebase 설정 객체
 const firebaseConfig = {
@@ -22,4 +23,5 @@ if (!getApps().length) {
 
 // Firebase Auth 인스턴스 가져오기
 export const auth: Auth = getAuth(app);
+export const db: Firestore = getFirestore(app);
 export default app;
