@@ -56,10 +56,10 @@ export default function ComicCard({ comic }: ComicCardProps) {
       await likeComic(comic.id);
       dispatch(toggleLikedComic(comic.id));
       dispatch(
-        updateComicMetrics({
-          id: comic.id,
-          changes: { likes: comic.likes + 1 },
-        })
+          updateComicMetrics({
+            id: comic.id,
+            changes: { likes: comic.likes + 1 },
+          })
       );
     } catch (error) {
       console.error("Failed to like comic:", error);
@@ -72,10 +72,10 @@ export default function ComicCard({ comic }: ComicCardProps) {
     try {
       await shareComic(comic.id);
       dispatch(
-        updateComicMetrics({
-          id: comic.id,
-          changes: { shares: comic.shares + 1 },
-        })
+          updateComicMetrics({
+            id: comic.id,
+            changes: { shares: comic.shares + 1 },
+          })
       );
     } catch (error) {
       console.error("Failed to record share:", error);
@@ -86,26 +86,27 @@ export default function ComicCard({ comic }: ComicCardProps) {
   const previewPanel = comic.panels[0];
   const secondaryPanels = comic.panels.slice(1, 4);
   const remainingPanels = Math.max(
-    0,
-    comic.panels.length - (1 + secondaryPanels.length)
+      0,
+      comic.panels.length - (1 + secondaryPanels.length)
   );
 
   return (
       <Link href={`/comic/${comic.id}`}>
-        <div className="
-  comic-card group/item
-  bg-[#141A22] border border-border rounded-2xl overflow-hidden
-  transition-all duration-[500ms] ease-in-out
-  hover:-translate-y-2 hover:scale-[1.08]
-  hover:shadow-[0_0_40px_-10px_rgba(60,100,180,0.25)]
-  hover:bg-[#233045]
-">
+        <div
+            className="
+          comic-card group/item
+          bg-[#141A22] border border-border rounded-2xl overflow-hidden
+          transition-all duration-[500ms] ease-in-out
+          hover:-translate-y-2 hover:scale-[1.08]
+          hover:shadow-[0_0_40px_-10px_rgba(60,100,180,0.25)]
+          hover:bg-[#233045]"
+        >
           {/* 미리보기 */}
           <div className="relative aspect-[3/2] bg-[#0D1117] overflow-hidden">
             {previewPanel ? (
                 <Image
                     src={previewPanel}
-                    alt={`${comic.repoName} preview panel`}
+                    alt={`${comic.title} preview panel`}
                     fill
                     className="object-cover transition-transform duration-[2200ms] ease-[cubic-bezier(0.19,1,0.22,1)] group-hover/item:scale-110"
                     sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
@@ -118,33 +119,32 @@ export default function ComicCard({ comic }: ComicCardProps) {
             )}
 
             {secondaryPanels.length > 0 && (
-              <div className="absolute bottom-3 left-3 flex items-center gap-2">
-                {secondaryPanels.map((panel, index) => (
-                  <div
-                    key={`${comic.id}-secondary-${index}`}
-                    className="relative w-14 h-9 rounded-md overflow-hidden border border-white/15 shadow-lg shadow-black/30"
-                  >
-                    <Image
-                      src={panel}
-                      alt={`${comic.repoName} panel thumbnail ${index + 2}`}
-                      fill
-                      sizes="56px"
-                      className="object-cover"
-                      unoptimized
-                    />
-                  </div>
-                ))}
-                {remainingPanels > 0 && (
-                  <span className="text-xs font-semibold text-white/90 bg-black/40 px-2.5 py-1 rounded-full backdrop-blur">
-                    +{remainingPanels}
-                  </span>
-                )}
-              </div>
+                <div className="absolute bottom-3 left-3 flex items-center gap-2">
+                  {secondaryPanels.map((panel, index) => (
+                      <div
+                          key={`${comic.id}-secondary-${index}`}
+                          className="relative w-14 h-9 rounded-md overflow-hidden border border-white/15 shadow-lg shadow-black/30"
+                      >
+                        <Image
+                            src={panel}
+                            alt={`${comic.title} panel thumbnail ${index + 2}`}
+                            fill
+                            sizes="56px"
+                            className="object-cover"
+                            unoptimized
+                        />
+                      </div>
+                  ))}
+                  {remainingPanels > 0 && (
+                      <span className="text-xs font-semibold text-white/90 bg-black/40 px-2.5 py-1 rounded-full backdrop-blur">
+                  +{remainingPanels}
+                </span>
+                  )}
+                </div>
             )}
 
             {comic.isNew && (
-                <div
-                    className="absolute top-3 right-3 bg-green-500 text-white text-xs font-semibold px-3 py-1.5 rounded-full shadow-lg animate-pulse">
+                <div className="absolute top-3 right-3 bg-green-500 text-white text-xs font-semibold px-3 py-1.5 rounded-full shadow-lg animate-pulse">
                   NEW
                 </div>
             )}
@@ -152,16 +152,33 @@ export default function ComicCard({ comic }: ComicCardProps) {
 
           {/* 콘텐츠 */}
           <div className="relative z-10 p-5 transition-colors duration-[2200ms] ease-[cubic-bezier(0.22,1,0.36,1)]">
+
+            {/* Title + Language + Category */}
             <div className="flex items-start justify-between gap-2 mb-3">
               <h3 className="font-semibold text-[1.05rem] text-gray-100 group-hover/item:text-blue-50 transition-colors duration-[2200ms] ease-[cubic-bezier(0.22,1,0.36,1)]">
-                {comic.repoName}
+                {comic.title}
               </h3>
-              <span
-                  className="text-xs bg-[#243447] text-blue-300 font-medium px-3 py-1 rounded-full whitespace-nowrap transition-colors duration-[2200ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/item:bg-blue-600 group-hover/item:text-white">
-              {comic.language}
-            </span>
+
+              <div className="flex gap-2 items-center">
+                {/* Language */}
+                <span
+                    className="text-xs bg-[#243447] text-blue-300 font-medium px-3 py-1 rounded-full whitespace-nowrap transition-colors duration-[2200ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/item:bg-blue-600 group-hover/item:text-white"
+                >
+                {comic.language}
+              </span>
+
+                {/* Category */}
+                {comic.category && (
+                    <span
+                        className="text-xs bg-[#19232F] text-blue-300 font-medium px-3 py-1 rounded-full whitespace-nowrap border border-white/10"
+                    >
+                  {comic.category}
+                </span>
+                )}
+              </div>
             </div>
 
+            {/* Stars */}
             <div className="flex items-center gap-1.5 mb-4">
               <Image
                   src="/blue_star.png"
@@ -170,24 +187,23 @@ export default function ComicCard({ comic }: ComicCardProps) {
                   height={16}
                   className="w-4 h-4"
               />
-              <span
-                  className="text-sm text-gray-400 font-medium group-hover/item:text-blue-100 transition-colors duration-[2200ms] ease-[cubic-bezier(0.22,1,0.36,1)]">
+              <span className="text-sm text-gray-400 font-medium group-hover/item:text-blue-100 transition-colors duration-[2200ms] ease-[cubic-bezier(0.22,1,0.36,1)]">
               {comic.stars.toLocaleString()}
             </span>
             </div>
 
-            <div
-                className="flex items-center justify-between pt-4 border-t border-border-light text-gray-400 group-hover/item:text-blue-100 transition-colors duration-[2200ms] ease-[cubic-bezier(0.22,1,0.36,1)]">
+            {/* Footer */}
+            <div className="flex items-center justify-between pt-4 border-t border-border-light text-gray-400 group-hover/item:text-blue-100 transition-colors duration-[2200ms] ease-[cubic-bezier(0.22,1,0.36,1)]">
               <div className="flex items-center gap-5">
                 <button
                     onClick={handleLike}
                     className="flex items-center gap-1.5 text-sm transition-transform duration-[2000ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:scale-110"
                 >
-                  <MessageCircle className="w-4 h-4"/>
+                  <MessageCircle className="w-4 h-4" />
                   <span>{comic.likes}</span>
                 </button>
                 <div className="flex items-center gap-1.5 text-sm">
-                  <Share2 className="w-4 h-4"/>
+                  <Share2 className="w-4 h-4" />
                   <span>{comic.shares}</span>
                 </div>
               </div>
@@ -198,7 +214,7 @@ export default function ComicCard({ comic }: ComicCardProps) {
                     className="p-2 rounded-lg transition-all duration-[2000ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:scale-110 hover:bg-[#1f3a5f]"
                     aria-label="Share"
                 >
-                  <Share2 className="w-4 h-4"/>
+                  <Share2 className="w-4 h-4" />
                 </button>
                 <button
                     onClick={handleSave}

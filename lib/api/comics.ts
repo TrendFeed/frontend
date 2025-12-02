@@ -17,6 +17,8 @@ export interface ComicApiResponse {
   comments: number;
   createdAt: string;
   savedAt?: string;
+  title: string;
+  category: string;
 }
 
 interface PaginatedComicResponse {
@@ -60,6 +62,8 @@ export const mapComicResponse = (payload: ComicApiResponse): Comic => ({
   comments: payload.comments ?? 0,
   createdAt: payload.createdAt,
   savedAt: payload.savedAt,
+  title: payload.title,
+  category: payload.category,
 });
 
 const toPaginatedResult = (

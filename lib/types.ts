@@ -12,6 +12,8 @@ export interface Comic {
   comments: number;
   createdAt: string;
   savedAt?: string;
+  title: string;
+  category: string;
 }
 
 export interface PaginationInfo {
