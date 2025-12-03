@@ -3,6 +3,7 @@ import { onSchedule } from "firebase-functions/v2/scheduler";
 import * as functions from "firebase-functions";
 import cors from "cors";
 import { onRequest } from "firebase-functions/v2/https";
+import * as admin from "firebase-admin";
 
 
 import {
@@ -11,7 +12,6 @@ import {
     GITHUB_API_BASE,
     REPOS_COL,
     CANDIDATES_COL,
-    GROWTH_K,
     SEARCH_YEARS,
     MIN_STARS,
     MAX_PAGES,
@@ -21,6 +21,11 @@ import {
     GROWTH_WEIGHT,
     PENALTY_WEIGHT,
     TREND_THRESHOLD,
+    TARGET_STARS_PER_DAY,
+    STAR_PIVOT_STARS,
+    STAR_FACTOR_ALPHA,
+    STAR_FACTOR_MIN,
+    STAR_FACTOR_MAX,
 } from "./config";
 import { sendNewsletterInternal } from "./newsletter"
 const corsHandler = cors({ origin: true });
@@ -41,7 +46,7 @@ interface GitHubRepoDoc {
     language?: string | null;
 
     stargazersCount?: number | null;
-    createdAt?: Date | null;
+    createdAt?: any
     pushedAt?: Date | null;
     updatedAt?: Date | null;
 
@@ -50,8 +55,8 @@ interface GitHubRepoDoc {
     trendScore?: number | null;
     trendStage?: number | null;
 
-    lastCrawledAt?: Date | null;
-    lastCheckedAt?: Date | null;
+    lastCrawledAt?: any
+    lastCheckedAt?: any
 
     readmeText?: string | null;
     readmeSha?: string | null;
@@ -223,78 +228,113 @@ function mapMetaToRepoDoc(meta: any, existing: GitHubRepoDoc | null): GitHubRepo
     return e;
 }
 
+function toJsDate(v: any): Date | null {
+  if (!v) return null;
+  if (v instanceof Date) return v;
+  if (typeof v?.toDate === "function") return v.toDate(); // Firestore Timestamp
+  return null;
+}
+
+function clamp(x: number, lo: number, hi: number) {
+  return Math.max(lo, Math.min(hi, x));
+}
+
 // ──────────────────────────────────────────────────────────────
 // score 계산 / stage update / candidate 승격
 // ──────────────────────────────────────────────────────────────
-
 async function evaluateTrendAndMaybePromote(e: GitHubRepoDoc): Promise<GitHubRepoDoc> {
-    const curr = orZero(e.stargazersCount ?? null);
-    const prev = orZero(e.previousStars ?? null);
+  const now = new Date();
 
-    let growthRate = 0.0;
-    if (prev > 0) {
-        growthRate = (curr - prev) / prev;
+  const curr = orZero(e.stargazersCount ?? null);
+  const prev = orZero(e.previousStars ?? null);
+
+  // (A) 이번 실행에서의 "증가량"
+  const deltaStarsRaw = curr - prev;
+  const deltaStars = Math.max(0, deltaStarsRaw);
+
+  // (B) "하루당 증가량"으로 안정화 (스케줄 지연/실패로 2~3일치 한 방에 들어오는 것 방지)
+  const lastChecked = toJsDate((e as any).lastCheckedAt) ?? toJsDate((e as any).lastCrawledAt);
+  const daysElapsed =
+    lastChecked
+      ? Math.max(1, (now.getTime() - lastChecked.getTime()) / (1000 * 60 * 60 * 24))
+      : 1;
+
+  const deltaPerDay = deltaStars / daysElapsed;
+
+  // (1) 증가량 정규화 (포화형)
+  // growthNorm ∈ [0, 1)
+  const target = Math.max(1, TARGET_STARS_PER_DAY);
+  let growthNorm = 0.0;
+  if (deltaPerDay > 0) {
+    growthNorm = 1.0 - Math.exp(-deltaPerDay / target);
+    growthNorm = clamp(growthNorm, 0.0, 1.0);
+  }
+
+  // (2) 나이 페널티 (기존 유지): agePenaltyFactor ∈ (0, 1]
+  let agePenaltyFactor = 1.0;
+  const createdAt = toJsDate((e as any).createdAt);
+  if (createdAt && AGE_HALF_LIFE_DAYS > 0) {
+    const ageMs = now.getTime() - createdAt.getTime();
+    const ageDays = Math.max(0, ageMs / (1000 * 60 * 60 * 24));
+    agePenaltyFactor = Math.pow(0.5, ageDays / AGE_HALF_LIFE_DAYS);
+    agePenaltyFactor = clamp(agePenaltyFactor, 0.0, 1.0);
+  }
+
+  // (3) 총 스타 페널티
+  const pivot = Math.max(1, STAR_PIVOT_STARS);
+  const alpha = Math.max(0, STAR_FACTOR_ALPHA);
+  const denom = Math.max(1, curr);
+
+  let starsFactor = Math.pow(pivot / denom, alpha);
+  starsFactor = clamp(starsFactor, STAR_FACTOR_MIN, STAR_FACTOR_MAX);
+
+  // (4) 최종 점수 (0~1) → (0~100)
+  let score01 = growthNorm * agePenaltyFactor * starsFactor * GROWTH_WEIGHT * PENALTY_WEIGHT;
+  score01 = clamp(score01, 0.0, 1.0);
+  const score100 = score01 * 100.0;
+
+  // (5) stage update (2회 연속 통과만 candidate 승격)
+  const oldStage = e.trendStage ?? 0;
+  let newStage = oldStage;
+
+  if (oldStage === 0 || oldStage === 1) {
+    if (score100 >= TREND_THRESHOLD) {
+      newStage = Math.min(2, oldStage + 1); // 0->1, 1->2
+    } else if (oldStage === 1) {
+      newStage = 0; // 1회 통과했다가 다음날 실패하면 리셋
     }
+  }
 
-    let growthNorm = 0.0;
-    if (growthRate > 0.0) {
-        growthNorm = 1.0 - Math.exp(-GROWTH_K * growthRate);
-        if (growthNorm < 0.0) growthNorm = 0.0;
-        if (growthNorm > 1.0) growthNorm = 1.0;
+  const promotedTo2Now = oldStage < 2 && newStage === 2;
+
+  // (6) 저장
+  e.growthRate = prev > 0 ? (curr - prev) / prev : 0.0; 
+  (e as any).deltaStars = deltaStars;         // 디버깅 편의(원하면 제거)
+  (e as any).deltaPerDay = deltaPerDay;       
+  (e as any).agePenaltyFactor = agePenaltyFactor; 
+  (e as any).starsFactor = starsFactor;           
+
+  e.trendScore = score100;
+  e.trendStage = newStage;
+  e.lastCheckedAt = now;
+  e.previousStars = curr;
+
+  // (7) 승격되면 candidates 테이블에 올리기 
+  if (promotedTo2Now && e.id && e.fullName) {
+    const candRef = db.collection(CANDIDATES_COL).doc(String(e.id));
+    const snap = await candRef.get();
+    if (!snap.exists) {
+      const c: CandidateDoc = {
+        repoId: e.id,
+        fullName: e.fullName,
+        promotedAt: now,
+        givenToAI: false,
+      };
+      await candRef.set(c);
     }
+  }
 
-    let agePenaltyFactor = 1.0;
-    if (e.createdAt && AGE_HALF_LIFE_DAYS > 0) {
-        const now = new Date();
-        const ageMs = now.getTime() - e.createdAt.getTime();
-        const ageDays = Math.max(0, Math.floor(ageMs / (1000 * 60 * 60 * 24)));
-        agePenaltyFactor = Math.pow(0.5, ageDays / AGE_HALF_LIFE_DAYS);
-        if (agePenaltyFactor < 0.0) agePenaltyFactor = 0.0;
-        if (agePenaltyFactor > 1.0) agePenaltyFactor = 1.0;
-    }
-
-    let score01 = growthNorm * agePenaltyFactor * GROWTH_WEIGHT * PENALTY_WEIGHT;
-    if (score01 < 0.0) score01 = 0.0;
-    if (score01 > 1.0) score01 = 1.0;
-
-    const score100 = score01 * 100.0;
-
-    const oldStage = e.trendStage ?? 0;
-    let newStage = oldStage;
-
-    if (oldStage === 0 || oldStage === 1) {
-        if (score100 >= TREND_THRESHOLD) {
-            newStage = Math.min(2, oldStage + 1);
-        } else if (oldStage === 1) {
-            newStage = 0; // 강등
-        }
-    }
-
-    const promotedTo2Now = oldStage < 2 && newStage === 2;
-
-    e.growthRate = growthRate;
-    e.trendScore = score100;
-    e.trendStage = newStage;
-    e.lastCheckedAt = new Date();
-    e.previousStars = curr;
-
-    // 승격되면 candidates 테이블에 올리기
-    if (promotedTo2Now && e.id && e.fullName) {
-        const candRef = db.collection(CANDIDATES_COL).doc(String(e.id));
-        const snap = await candRef.get();
-        if (!snap.exists) {
-            const now = new Date();
-            const c: CandidateDoc = {
-                repoId: e.id,
-                fullName: e.fullName,
-                promotedAt: now,
-                givenToAI: false,
-            };
-            await candRef.set(c);
-        }
-    }
-
-    return e;
+  return e;
 }
 
 // ──────────────────────────────────────────────────────────────
@@ -685,13 +725,44 @@ export async function sendReadmeToAI_Alt(repo: GitHubRepoDoc): Promise<string | 
 // Pub/Sub 스케줄링 (3일마다 전체 크롤)
 // ──────────────────────────────────────────────────────────────
 
-export const crawlScheduled = onSchedule("every 48 hours", async (event) => {
-    console.log("Scheduled crawl started");
+export const crawlScheduled = onSchedule(
+  {
+    schedule: "every 24 hours",
+    region: "us-central1",
+    timeoutSeconds: 3600,
+    memory: "2GiB",
+  },
+  async () => {
     await crawlAllAndEvaluateInternal();
     await sendNewsletterForCompletedCandidates();
-    console.log("Scheduled crawl finished");
-});
+  }
+);
 
+// 스케쥴러 작동 테스트용
+export const runScheduledNow = onRequest(
+  {
+    region: "us-central1",
+    timeoutSeconds: 3600,
+    memory: "2GiB",
+    cors: true,
+  },
+  async (req, res) => {
+    try {
+      if (req.method !== "POST") {
+        res.status(405).send("Method Not Allowed");
+        return;
+      }
+
+      //await crawlAllAndEvaluateInternal();
+      await sendNewsletterForCompletedCandidates();
+
+      res.status(200).send("scheduled job ran (manual trigger)");
+    } catch (e: any) {
+      console.error("runScheduledNow error:", e);
+      res.status(500).send(e?.message ?? "Internal Server Error");
+    }
+  }
+);
 
 // ──────────────────────────────────────────────────────────────
 // AI 작업 완료된 후보 조회 및 뉴스레터 발송
@@ -769,49 +840,94 @@ async function getCompletedCandidates(limit: number): Promise<(CandidateDoc & { 
 
     return candidatesToProcess;
 }
-/**
- * AI 작업 완료된 후보들을 모아 뉴스레터를 발송하고,
- * 해당 후보들의 Firestore 문서에 발송 완료 시간을 기록합니다.
- */
+
+
+async function tryLockCandidateForNewsletter(repoId: number, now: Date): Promise<boolean> {
+  const ref = db.collection(CANDIDATES_COL).doc(String(repoId));
+  const LOCK_MS = 30 * 60 * 1000; // 30분 락(실행 중 죽어도 재시도 가능하게)
+
+  return await db.runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    if (!snap.exists) return false;
+
+    const data = snap.data() as any;
+
+    // 이미 발송 완료면 스킵
+    if (data.newsletterSentAt != null) return false;
+
+    // 다른 실행이 락을 잡고 있으면 스킵 (단, 오래된 락은 만료로 간주)
+    const lockAt: Date | null = data.newsletterLockAt?.toDate?.() ?? null;
+    if (lockAt && now.getTime() - lockAt.getTime() < LOCK_MS) {
+      return false;
+    }
+
+    // 락 잡기 (처리중 표시)
+    tx.update(ref, {
+      newsletterLockAt: now,
+      newsletterLockBy: "crawlScheduled/runScheduledNow",
+    });
+
+    return true;
+  });
+}
+
 async function sendNewsletterForCompletedCandidates(): Promise<void> {
-    // 한 번에 너무 많은 이메일을 보내는 것을 방지하기 위해 최대 20개로 제한
-    const completedCands = await getCompletedCandidates(20);
+  const now = new Date();
+  const completedCands = await getCompletedCandidates(20);
 
-    if (completedCands.length === 0) {
-        console.log("[Newsletter Dispatch] No completed candidates found.");
-        return;
+  if (completedCands.length === 0) {
+    console.log("[Newsletter Dispatch] No completed candidates found.");
+    return;
+  }
+
+  let processed = 0;
+
+  for (const c of completedCands) {
+    // 1) 락부터 시도 (중복발송 방지)
+    const locked = await tryLockCandidateForNewsletter(c.repoId, now);
+    if (!locked) {
+      console.log("[Newsletter Dispatch] skip (locked or already sent):", c.fullName);
+      continue;
     }
 
-    const now = new Date();
-    const batch = db.batch();
+    const candRef = db.collection(CANDIDATES_COL).doc(String(c.repoId));
 
-    for (const c of completedCands) {
-        // 뉴스레터 발송 (sendNewsletterInternal은 newsletter.ts에서 import)
-        try {
-            await sendNewsletterInternal({
-                fullName: c.fullName,
-                comicId: c.comicId,
-                summary: c.summary,
-            });
+    // 2) 락 성공한 것만 메일 발송
+    try {
+      await sendNewsletterInternal({
+        fullName: c.fullName,
+        comicId: c.comicId,
+        summary: c.summary,
+      });
 
-            // 발송 성공 후, Firestore에 발송 완료 시간 기록
-            const candRef = db.collection(CANDIDATES_COL).doc(String(c.repoId));
-            batch.update(candRef, {
-                newsletterSentAt: now,
-                newsletterSendSuccess: true,
-            });
-        } catch (err) {
-            console.error(`[Newsletter Dispatch] Failed to send for ${c.fullName}`, err);
-            // 실패 시에도 기록을 남기기 위해 실패 시간만 업데이트
-            const candRef = db.collection(CANDIDATES_COL).doc(String(c.repoId));
-            batch.update(candRef, {
-                newsletterSentAt: now,
-                newsletterSendSuccess: false,
-                lastNewsletterError: (err as Error).message,
-            });
-        }
+      // 3) 성공 기록 + 락 해제
+      await candRef.set(
+        {
+          newsletterSentAt: now,
+          newsletterSendSuccess: true,
+          newsletterLockAt: admin.firestore.FieldValue.delete(),
+          newsletterLockBy: admin.firestore.FieldValue.delete(),
+        },
+        { merge: true }
+      );
+
+      processed++;
+    } catch (err) {
+      console.error(`[Newsletter Dispatch] Failed to send for ${c.fullName}`, err);
+
+      // 4) 실패 기록 + 락 해제(재시도 가능)
+      await candRef.set(
+        {
+          newsletterSentAt: now,
+          newsletterSendSuccess: false,
+          lastNewsletterError: (err as Error)?.message ?? String(err),
+          newsletterLockAt: admin.firestore.FieldValue.delete(),
+          newsletterLockBy: admin.firestore.FieldValue.delete(),
+        },
+        { merge: true }
+      );
     }
+  }
 
-    await batch.commit();
-    console.log(`[Newsletter Dispatch] Finished processing ${completedCands.length} candidates.`);
+  console.log(`[Newsletter Dispatch] Finished. sent/attempted = ${processed}/${completedCands.length}`);
 }
