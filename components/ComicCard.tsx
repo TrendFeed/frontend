@@ -15,6 +15,9 @@ import { useAuth } from "@/lib/contexts/AuthContext";
 import { saveComic, unsaveComic } from "@/lib/api/user";
 import { likeComic, shareComic } from "@/lib/api/comics";
 import { updateComicMetrics } from "@/lib/redux/slices/comicsSlice";
+import { collection, query, where, getDocs } from "firebase/firestore";
+import { db } from "@/lib/firebase/config";
+import { useEffect, useState } from "react";
 
 interface ComicCardProps {
   comic: Comic;
@@ -29,6 +32,34 @@ export default function ComicCard({ comic }: ComicCardProps) {
   const isSaved = savedComics.includes(comic.id);
   const isLiked = likedComics.includes(comic.id);
 
+  const [commentCount, setCommentCount] = useState(0);
+
+  useEffect(() => {
+    const fetchComments = async () => {
+      try {
+        const numericComicId = Number(comic.id);
+        console.log("🔍 Fetching comments for comicId:", numericComicId);
+
+        const q = query(
+            collection(db, "comments"),
+            where("comicId", "==", numericComicId)
+        );
+
+        const snapshot = await getDocs(q);
+        console.log("📌 Found comments:", snapshot.size);
+
+        snapshot.forEach((doc) => {
+          console.log("🟦 Comment:", doc.id, doc.data());
+        });
+
+        setCommentCount(snapshot.size);
+      } catch (error) {
+        console.error("❌ Failed to load comment count:", error);
+      }
+    };
+
+    fetchComments();
+  }, [comic.id]);
   const handleSave = async (e: React.MouseEvent) => {
     e.preventDefault();
     if (!user) {
@@ -200,12 +231,8 @@ export default function ComicCard({ comic }: ComicCardProps) {
                     className="flex items-center gap-1.5 text-sm transition-transform duration-[2000ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:scale-110"
                 >
                   <MessageCircle className="w-4 h-4" />
-                  <span>{comic.likes}</span>
-                </button>
-                <div className="flex items-center gap-1.5 text-sm">
-                  <Share2 className="w-4 h-4" />
-                  <span>{comic.shares}</span>
-                </div>
+                  <span>{commentCount}</span>
+                  </button>
               </div>
 
               <div className="flex items-center gap-1">

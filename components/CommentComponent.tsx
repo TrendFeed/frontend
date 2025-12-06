@@ -12,6 +12,7 @@ import {
     serverTimestamp,
     deleteDoc,
     doc,
+    where
 } from "firebase/firestore";
 import Image from "next/image";
 
@@ -21,18 +22,20 @@ interface Comment {
     userId: string;
     displayName: string;
     createdAt: any;
+    comicId: number;
 }
 
-export default function CommentComponent({ comicId }: { comicId: string }) {
+export default function CommentComponent({ comicId }: { comicId: number }) {
     const { user } = useAuth();
     const [newComment, setNewComment] = useState("");
     const [comments, setComments] = useState<Comment[]>([]);
     const [loading, setLoading] = useState(true);
 
-    // 🔥 Firestore 댓글 불러오기 (실시간)
+    // 🔥 Firestore 댓글 실시간 구독
     useEffect(() => {
         const q = query(
-            collection(db, "comments", comicId, "items"),
+            collection(db, "comments"),
+            where("comicId", "==", comicId),  // ✔ comicId 필터
             orderBy("createdAt", "desc")
         );
 
@@ -57,7 +60,8 @@ export default function CommentComponent({ comicId }: { comicId: string }) {
         }
         if (!newComment.trim()) return;
 
-        await addDoc(collection(db, "comments", comicId, "items"), {
+        await addDoc(collection(db, "comments"), {
+            comicId: comicId,
             text: newComment.trim(),
             userId: user.uid,
             displayName: user.displayName || "Anonymous",
@@ -74,7 +78,7 @@ export default function CommentComponent({ comicId }: { comicId: string }) {
             return;
         }
 
-        await deleteDoc(doc(db, "comments", comicId, "items", id));
+        await deleteDoc(doc(db, "comments", id)); // ✔ items 제거
     };
 
     return (

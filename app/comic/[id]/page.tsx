@@ -277,7 +277,7 @@ export default function ComicDetailPage() {
           </button>
         </div>
 
-        <CommentComponent comicId={String(comic.id)} />
+        <CommentComponent comicId={comic.id} />
 
         {relatedComics.length > 0 && (
           <div>
