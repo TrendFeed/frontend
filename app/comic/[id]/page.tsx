@@ -27,6 +27,7 @@ import {
   fetchComicsByLanguage,
 } from "@/lib/api/comics";
 import KeyInsightsComponent from "@/components/KeyInsights";
+import CommentComponent from "@/components/CommentComponent";
 
 export default function ComicDetailPage() {
   const params = useParams();
@@ -275,6 +276,8 @@ export default function ComicDetailPage() {
             Download Comic
           </button>
         </div>
+
+        <CommentComponent comicId={String(comic.id)} />
 
         {relatedComics.length > 0 && (
           <div>
