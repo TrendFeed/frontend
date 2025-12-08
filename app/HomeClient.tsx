@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import Header from "@/components/Header";
 import TabNavigation from "@/components/TabNavigation";
@@ -28,6 +28,7 @@ import { db } from "@/lib/firebase/config"; // path 확인 필요 (예: "@/fireb
 import { collection, query, where, getDocs, limit } from "firebase/firestore";
 import { getRecommendedCategories } from "@/lib/recommend"
 import {Comic} from "@/lib/types";
+import AdvertisingButton from "@/components/AdvertisingButton";
 
 // 홈 클라이언트 컴포넌트
 export default function HomeClient() {
@@ -269,6 +270,7 @@ export default function HomeClient() {
 
         <ShareModal />
         <NewsletterModal />
+        <AdvertisingButton />
       </div>
   );
 }

@@ -356,3 +356,55 @@ export async function sendNewsletterInternal(params: {
 
     console.log(`[Newsletter] Sent to ${subscribers.length} subscribers.`);
 }
+
+export const submitAdRequest = functions.https.onRequest((req, res) => {
+    corsHandler(req, res, async () => {
+        try {
+            if (req.method !== "POST") {
+                res.status(405).send("Method Not Allowed");
+                return;
+            }
+
+            const { githubUrl, highlight, duration } = req.body;
+
+            if (!githubUrl || !highlight || !duration) {
+                res.status(400).send("Missing required fields");
+                return;
+            }
+
+            // Firestore 저장
+            const ref = db.collection("advertise_requests").doc();
+            await ref.set({
+                id: ref.id,
+                githubUrl,
+                highlight,
+                duration,
+                createdAt: Date.now(),
+                status: "pending",
+            });
+
+            // 이메일 발송
+            await transporter.sendMail({
+                from: `"TrendFeed Ads" <${SMTP_USER}>`,
+                to: "onlyforteamusage@gmail.com",
+                subject: "📢 새로운 광고 요청이 도착했습니다",
+                html: `
+          <h2>📢 광고 요청</h2>
+          <p><b>GitHub:</b> ${githubUrl}</p>
+          <p><b>내용:</b> ${highlight}</p>
+          <p><b>기간:</b> ${duration}</p>
+          <p><b>요청 ID:</b> ${ref.id}</p>
+        `,
+            });
+
+            res.status(200).send({
+                success: true,
+                message: "Ad request successfully submitted",
+                id: ref.id,
+            });
+        } catch (err) {
+            console.error("Error submitting ad request:", err);
+            res.status(500).send("Internal Server Error");
+        }
+    });
+});

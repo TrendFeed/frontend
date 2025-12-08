@@ -27,6 +27,7 @@ export {
   newsletterSubscribe,
   newsletterConfirm,
   newsletterUnsubscribe,
+  submitAdRequest
 } from "./newsletter";
 
 export {
