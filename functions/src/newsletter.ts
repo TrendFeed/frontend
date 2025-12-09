@@ -22,17 +22,6 @@ const NEWSLETTER_COL = "newsletter_subscriptions";
 const NOTIFICATION_COL = "notifications";
 
 
-// Nodemailer 설정
-const transporter = nodemailer.createTransport({
-    host: SMTP_HOST.value(),
-    port: Number(SMTP_PORT.value()),
-    secure: Number(SMTP_PORT.value()) === 465,
-    auth: {
-        user: SMTP_USER.value(),
-        pass: SMTP_PASS.value(),
-    },
-});
-
 // 랜덤 토큰 생성
 function generateToken(length = 24): string {
     return crypto.randomBytes(length).toString("hex");
@@ -100,6 +89,18 @@ export const newsletterSubscribe = functions.https.onRequest((req: Request, res:
             const confirmLink = `${FRONTEND_CONFIRM_URL}?token=${encodeURIComponent(
                 token
             )}`;
+
+            // Nodemailer 설정
+            const transporter = nodemailer.createTransport({
+                host: SMTP_HOST.value(),
+                port: Number(SMTP_PORT.value()),
+                secure: Number(SMTP_PORT.value()) === 465,
+                auth: {
+                    user: SMTP_USER.value(),
+                    pass: SMTP_PASS.value(),
+                },
+            });
+
 
             await transporter.sendMail({
                 from: `"TrendFeed Newsletter" <${SMTP_USER}>`,
@@ -340,6 +341,18 @@ export async function sendNewsletterInternal(params: {
     await batch.commit();
 
     // 이메일 발송
+    // Nodemailer 설정
+    const transporter = nodemailer.createTransport({
+        host: SMTP_HOST.value(),
+        port: Number(SMTP_PORT.value()),
+        secure: Number(SMTP_PORT.value()) === 465,
+        auth: {
+            user: SMTP_USER.value(),
+            pass: SMTP_PASS.value(),
+        },
+    });
+
+
     for (const email of subscribers) {
         await transporter.sendMail({
             from: `"TrendFeed Newsletter" <${SMTP_USER}>`,
@@ -390,6 +403,17 @@ export const submitAdRequest = functions.https.onRequest((req:Request, res:Respo
                 createdAt: Date.now(),
                 status: "pending",
             });
+            // Nodemailer 설정
+            const transporter = nodemailer.createTransport({
+                host: SMTP_HOST.value(),
+                port: Number(SMTP_PORT.value()),
+                secure: Number(SMTP_PORT.value()) === 465,
+                auth: {
+                    user: SMTP_USER.value(),
+                    pass: SMTP_PASS.value(),
+                },
+            });
+
 
             // 이메일 발송
             await transporter.sendMail({
