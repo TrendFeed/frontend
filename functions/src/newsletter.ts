@@ -1,4 +1,5 @@
 // functions/src/newsletter.ts
+import functions from 'firebase-functions';
 import * as admin from "firebase-admin";
 import nodemailer from "nodemailer";
 import { FRONTEND_CONFIRM_URL } from "./config";
@@ -9,21 +10,26 @@ import { Request, Response } from "express";
 const db = admin.firestore();
 const corsHandler = cors({ origin: true });
 
+import { defineSecret } from "firebase-functions/params";
+
+const SMTP_HOST = defineSecret("SMTP_HOST");
+const SMTP_PORT = defineSecret("SMTP_PORT");
+const SMTP_USER = defineSecret("SMTP_USER");
+const SMTP_PASS = defineSecret("SMTP_PASS");
+
 // Firestore 컬렉션
 const NEWSLETTER_COL = "newsletter_subscriptions";
 const NOTIFICATION_COL = "notifications";
 
-const functions = require('firebase-functions');
-const smtpConfig = functions.config().smtp;
 
 // Nodemailer 설정
 const transporter = nodemailer.createTransport({
-    host: smtpConfig.host,
-    port: 465,
-    secure: true,
+    host: SMTP_HOST.value(),
+    port: Number(SMTP_PORT.value()),
+    secure: Number(SMTP_PORT.value()) === 465,
     auth: {
-        user: smtpConfig.user,
-        pass: smtpConfig.pass,
+        user: SMTP_USER.value(),
+        pass: SMTP_PASS.value(),
     },
 });
 
@@ -96,7 +102,7 @@ export const newsletterSubscribe = functions.https.onRequest((req: Request, res:
             )}`;
 
             await transporter.sendMail({
-                from: `"TrendFeed Newsletter" <${smtpConfig.user}>`,
+                from: `"TrendFeed Newsletter" <${SMTP_USER}>`,
                 to: normalizedEmail,
                 subject: "[TrendFeed] 뉴스레터 구독 확인 메일입니다",
                 html: `
@@ -336,7 +342,7 @@ export async function sendNewsletterInternal(params: {
     // 이메일 발송
     for (const email of subscribers) {
         await transporter.sendMail({
-            from: `"TrendFeed Newsletter" <${smtpConfig.user}>`,
+            from: `"TrendFeed Newsletter" <${SMTP_USER}>`,
             to: email,
             subject: `[TrendFeed] New comic is ready: ${fullName}`,
             html: `
@@ -387,7 +393,7 @@ export const submitAdRequest = functions.https.onRequest((req:Request, res:Respo
 
             // 이메일 발송
             await transporter.sendMail({
-                from: `"TrendFeed Ads" <${smtpConfig.user}>`,
+                from: `"TrendFeed Ads" <${SMTP_USER}>`,
                 to: "onlyforteamusage@gmail.com",
                 subject: "📢 새로운 광고 요청이 도착했습니다",
                 html: `
