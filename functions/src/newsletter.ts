@@ -1,11 +1,10 @@
 // functions/src/newsletter.ts
-
-import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 import nodemailer from "nodemailer";
-import { SMTP_USER, SMTP_PASS, SMTP_HOST, SMTP_PORT, FRONTEND_CONFIRM_URL } from "./config";
+import { FRONTEND_CONFIRM_URL } from "./config";
 import crypto from "crypto";
 import cors from "cors";
+import { Request, Response } from "express";
 
 const db = admin.firestore();
 const corsHandler = cors({ origin: true });
@@ -14,16 +13,19 @@ const corsHandler = cors({ origin: true });
 const NEWSLETTER_COL = "newsletter_subscriptions";
 const NOTIFICATION_COL = "notifications";
 
+const functions = require('firebase-functions');
+const smtpConfig = functions.config().smtp;
+
 // Nodemailer 설정
 const transporter = nodemailer.createTransport({
-    host: SMTP_HOST,
-    port: SMTP_PORT,
+    host: smtpConfig.host,
+    port: 465,
     secure: true,
     auth: {
-        user: SMTP_USER,
-        pass: SMTP_PASS,
+        user: smtpConfig.user,
+        pass: smtpConfig.pass,
     },
-} as any);
+});
 
 // 랜덤 토큰 생성
 function generateToken(length = 24): string {
@@ -34,7 +36,7 @@ function generateToken(length = 24): string {
  * (1) 구독 신청 API
  * POST /newsletterSubscribe
  * ────────────────────────────────────────────*/
-export const newsletterSubscribe = functions.https.onRequest((req, res) => {
+export const newsletterSubscribe = functions.https.onRequest((req: Request, res:Response) => {
     corsHandler(req, res, async () => {
         try {
             if (req.method !== "POST") {
@@ -94,7 +96,7 @@ export const newsletterSubscribe = functions.https.onRequest((req, res) => {
             )}`;
 
             await transporter.sendMail({
-                from: `"TrendFeed Newsletter" <${SMTP_USER}>`,
+                from: `"TrendFeed Newsletter" <${smtpConfig.user}>`,
                 to: normalizedEmail,
                 subject: "[TrendFeed] 뉴스레터 구독 확인 메일입니다",
                 html: `
@@ -132,7 +134,7 @@ export const newsletterSubscribe = functions.https.onRequest((req, res) => {
  * (2) 구독 확인 API
  * GET /newsletterConfirm
  * ────────────────────────────────────────────*/
-export const newsletterConfirm = functions.https.onRequest((req, res) => {
+export const newsletterConfirm = functions.https.onRequest((req:Request, res:Response) => {
     corsHandler(req, res, async () => {
         try {
             if (req.method !== "GET") {
@@ -203,7 +205,7 @@ export const newsletterConfirm = functions.https.onRequest((req, res) => {
  * (3) 구독 해지 API
  * POST /newsletterUnsubscribe
  * ────────────────────────────────────────────*/
-export const newsletterUnsubscribe = functions.https.onRequest((req, res) => {
+export const newsletterUnsubscribe = functions.https.onRequest((req:Request, res:Response) => {
     corsHandler(req, res, async () => {
         try {
             if (req.method !== "POST") {
@@ -334,7 +336,7 @@ export async function sendNewsletterInternal(params: {
     // 이메일 발송
     for (const email of subscribers) {
         await transporter.sendMail({
-            from: `"TrendFeed Newsletter" <${SMTP_USER}>`,
+            from: `"TrendFeed Newsletter" <${smtpConfig.user}>`,
             to: email,
             subject: `[TrendFeed] New comic is ready: ${fullName}`,
             html: `
@@ -357,7 +359,7 @@ export async function sendNewsletterInternal(params: {
     console.log(`[Newsletter] Sent to ${subscribers.length} subscribers.`);
 }
 
-export const submitAdRequest = functions.https.onRequest((req, res) => {
+export const submitAdRequest = functions.https.onRequest((req:Request, res:Response) => {
     corsHandler(req, res, async () => {
         try {
             if (req.method !== "POST") {
@@ -385,7 +387,7 @@ export const submitAdRequest = functions.https.onRequest((req, res) => {
 
             // 이메일 발송
             await transporter.sendMail({
-                from: `"TrendFeed Ads" <${SMTP_USER}>`,
+                from: `"TrendFeed Ads" <${smtpConfig.user}>`,
                 to: "onlyforteamusage@gmail.com",
                 subject: "📢 새로운 광고 요청이 도착했습니다",
                 html: `

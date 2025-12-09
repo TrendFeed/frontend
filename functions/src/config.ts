@@ -35,11 +35,6 @@ export const GROWTH_WEIGHT = Number(process.env.GROWTH_WEIGHT ?? "1.0");
 export const PENALTY_WEIGHT = Number(process.env.PENALTY_WEIGHT ?? "1.0");
 export const TREND_THRESHOLD = Number(process.env.TREND_THRESHOLD ?? "30.0");
 
-export const SMTP_USER = process.env.SMTP_USER || "";
-export const SMTP_PASS = process.env.SMTP_PASS || "";
-export const SMTP_HOST = process.env.SMTP_HOST || "smtp.gmail.com";
-export const SMTP_PORT = process.env.SMTP_PORT || "465";
-
 export const FRONTEND_CONFIRM_URL =
   process.env.FRONTEND_CONFIRM_URL || "https://trendfeed.kr/newsletter/confirm";
 
