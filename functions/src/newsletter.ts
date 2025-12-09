@@ -31,7 +31,9 @@ function generateToken(length = 24): string {
  * (1) 구독 신청 API
  * POST /newsletterSubscribe
  * ────────────────────────────────────────────*/
-export const newsletterSubscribe = functions.https.onRequest((req: Request, res:Response) => {
+export const newsletterSubscribe =
+    functions.https.onRequest({secrets: [SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS]},(req: Request, res:Response) =>
+{
     corsHandler(req, res, async () => {
         try {
             if (req.method !== "POST") {
@@ -103,7 +105,7 @@ export const newsletterSubscribe = functions.https.onRequest((req: Request, res:
 
 
             await transporter.sendMail({
-                from: `"TrendFeed Newsletter" <${SMTP_USER}>`,
+                from: `"TrendFeed Newsletter" <${SMTP_USER.value()}>`,
                 to: normalizedEmail,
                 subject: "[TrendFeed] 뉴스레터 구독 확인 메일입니다",
                 html: `
@@ -141,7 +143,7 @@ export const newsletterSubscribe = functions.https.onRequest((req: Request, res:
  * (2) 구독 확인 API
  * GET /newsletterConfirm
  * ────────────────────────────────────────────*/
-export const newsletterConfirm = functions.https.onRequest((req:Request, res:Response) => {
+export const newsletterConfirm = functions.https.onRequest({secrets: [SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS]}, (req:Request, res:Response) => {
     corsHandler(req, res, async () => {
         try {
             if (req.method !== "GET") {
@@ -212,7 +214,7 @@ export const newsletterConfirm = functions.https.onRequest((req:Request, res:Res
  * (3) 구독 해지 API
  * POST /newsletterUnsubscribe
  * ────────────────────────────────────────────*/
-export const newsletterUnsubscribe = functions.https.onRequest((req:Request, res:Response) => {
+export const newsletterUnsubscribe = functions.https.onRequest({secrets: [SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS]}, (req:Request, res:Response) => {
     corsHandler(req, res, async () => {
         try {
             if (req.method !== "POST") {
@@ -355,7 +357,7 @@ export async function sendNewsletterInternal(params: {
 
     for (const email of subscribers) {
         await transporter.sendMail({
-            from: `"TrendFeed Newsletter" <${SMTP_USER}>`,
+            from: `"TrendFeed Newsletter" <${SMTP_USER.value()}>`,
             to: email,
             subject: `[TrendFeed] New comic is ready: ${fullName}`,
             html: `
@@ -378,7 +380,7 @@ export async function sendNewsletterInternal(params: {
     console.log(`[Newsletter] Sent to ${subscribers.length} subscribers.`);
 }
 
-export const submitAdRequest = functions.https.onRequest((req:Request, res:Response) => {
+export const submitAdRequest = functions.https.onRequest({secrets: [SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS]}, (req:Request, res:Response) => {
     corsHandler(req, res, async () => {
         try {
             if (req.method !== "POST") {
@@ -417,7 +419,7 @@ export const submitAdRequest = functions.https.onRequest((req:Request, res:Respo
 
             // 이메일 발송
             await transporter.sendMail({
-                from: `"TrendFeed Ads" <${SMTP_USER}>`,
+                from: `"TrendFeed Ads" <${SMTP_USER.value()}>`,
                 to: "onlyforteamusage@gmail.com",
                 subject: "📢 새로운 광고 요청이 도착했습니다",
                 html: `
