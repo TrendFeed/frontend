@@ -35,7 +35,9 @@ export default function HomeClient() {
   const dispatch = useAppDispatch();
   const searchParams = useSearchParams();
   const { user } = useAuth();
-
+  const categoryFilter = useAppSelector(
+      (state) => state.comics.categoryFilter
+  );
   const comics = useAppSelector((state) => state.comics.comics);
   const activeTab = useAppSelector((state) => state.comics.activeTab);
   const languageFilter = useAppSelector((state) => state.comics.languageFilter);
@@ -197,24 +199,33 @@ export default function HomeClient() {
       ) {
         return false;
       }
+
       if (languageFilter !== "all" && comic.language !== languageFilter) {
         return false;
       }
+
+      // ✅ category 필터 추가
+      if (categoryFilter !== "all" && comic.category !== categoryFilter) {
+        return false;
+      }
+
       if (
           searchQuery &&
           !comic.repoName.toLowerCase().includes(searchQuery.toLowerCase())
       ) {
         return false;
       }
+
       return true;
     });
 
     const sorted = [...matches].sort((a, b) => {
-      // For You 탭은 이미 위에서 추천 로직+날짜로 정렬해서 가져오므로 재정렬 불필요할 수 있으나
-      // 사용자가 SortBy를 명시적으로 바꿨을 때를 대비해 유지
       if (sortBy === "stars") return b.stars - a.stars;
       if (sortBy === "recent") {
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        return (
+            new Date(b.createdAt).getTime() -
+            new Date(a.createdAt).getTime()
+        );
       }
       return b.likes + b.shares - (a.likes + a.shares);
     });
@@ -225,6 +236,7 @@ export default function HomeClient() {
     activeTab,
     savedComics,
     languageFilter,
+    categoryFilter, // ✅ dependency 추가
     searchQuery,
     sortBy,
   ]);

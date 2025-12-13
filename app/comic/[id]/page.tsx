@@ -40,6 +40,16 @@ export default function ComicDetailPage() {
   const [relatedComics, setRelatedComics] = useState<Comic[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+
+  const goPrev = () => {
+    setCurrentIndex((prev) => Math.max(prev - 1, 0));
+  };
+
+  const goNext = () => {
+    setCurrentIndex((prev) => Math.min(prev + 1, totalPanels - 1));
+  };
 
   const comicId = useMemo(() => {
     const idParam = params?.id;
@@ -145,6 +155,8 @@ export default function ComicDetailPage() {
     );
   }
 
+  const totalPanels = comic!.panels?.length ?? 0;
+
   return (
     <div className="min-h-screen bg-[#0D1117]">
       <header className="sticky top-0 z-50 bg-[#0D1117]/80 backdrop-blur-md border-b border-[#30363D] shadow-sm">
@@ -202,16 +214,17 @@ export default function ComicDetailPage() {
                 </span>
                 <span className="text-[#8B949E] text-sm font-medium flex items-center gap-1">
                   <Image
-                    src="/blue_star.png"
-                    alt="star"
-                    width={16}
-                    height={16}
-                    className="w-4 h-4"
+                      src="/blue_star.png"
+                      alt="star"
+                      width={16}
+                      height={16}
+                      className="w-4 h-4"
                   />
                   {comic.stars.toLocaleString()} stars
                 </span>
                 {comic.isNew && (
-                  <span className="bg-[#3FB950] text-white text-xs font-semibold px-3 py-1.5 rounded-full shadow-md animate-pulse">
+                    <span
+                        className="bg-[#3FB950] text-white text-xs font-semibold px-3 py-1.5 rounded-full shadow-md animate-pulse">
                     NEW
                   </span>
                 )}
@@ -222,79 +235,98 @@ export default function ComicDetailPage() {
 
         <div className="mb-10">
           {comic.panels.length > 0 ? (
-            <div className="relative pt-10">
-              <div className="absolute top-0 left-0 inline-flex items-center gap-2 rounded-full border border-[#30363D] bg-[#0D1117] px-3 py-1 text-xs font-semibold uppercase tracking-wide text-[#8B949E]">
-                <span className="text-[#58A6FF]">읽는 순서</span>
-                <span>↘</span>
-                <span className="text-[#8B949E]/80">왼쪽에서 오른쪽</span>
-              </div>
-              <div className="grid grid-cols-2 auto-rows-[minmax(0,1fr)] gap-5">
-                {comic.panels.map((panel, index) => (
-                  <div
-                    key={panel}
-                    className="group/panel relative aspect-[3/2] bg-[#161B22] rounded-2xl overflow-hidden border border-[#30363D] hover:border-[#58A6FF] shadow-md hover:shadow-2xl"
-                  >
-                    <Image
-                      src={panel}
-                      alt={`${comic.repoName} panel ${index + 1}`}
+              <div className="relative flex flex-col items-center gap-6">
+
+                {/* 페이지 정보 */}
+                <div className="text-sm text-[#8B949E] font-medium">
+                  {currentIndex + 1} / {totalPanels}
+                </div>
+
+                {/* 만화 패널 */}
+                <div
+                    className="relative w-full max-w-4xl aspect-[3/2] bg-[#161B22] rounded-2xl overflow-hidden border border-[#30363D] shadow-xl">
+                  <Image
+                      src={comic.panels[currentIndex]}
+                      alt={`${comic.repoName} panel ${currentIndex + 1}`}
                       fill
-                      className="object-cover transition-transform duration-700 group-hover/panel:scale-105"
-                      sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 360px"
+                      className="object-cover"
+                      sizes="(max-width: 768px) 100vw, 800px"
                       unoptimized
-                    />
-                    <span className="absolute top-4 left-4 bg-black/45 backdrop-blur text-xs font-semibold text-white px-2.5 py-1 rounded-full">
-                      #{index + 1}
-                    </span>
-                  </div>
-                ))}
+                  />
+
+                  {/* 패널 번호 */}
+                  <span
+                      className="absolute top-4 left-4 bg-black/50 backdrop-blur text-xs font-semibold text-white px-3 py-1 rounded-full">
+          #{currentIndex + 1}
+        </span>
+                </div>
+
+                {/* 네비게이션 버튼 */}
+                <div className="flex items-center gap-4">
+                  <button
+                      onClick={goPrev}
+                      disabled={currentIndex === 0}
+                      className="px-5 py-2 rounded-lg border border-[#30363D] text-[#C9D1D9]
+                     disabled:opacity-40 disabled:cursor-not-allowed
+                     hover:border-[#58A6FF] transition"
+                  >
+                    ←
+                  </button>
+
+                  <button
+                      onClick={goNext}
+                      disabled={currentIndex === totalPanels - 1}
+                      className="px-5 py-2 rounded-lg bg-[#58A6FF] text-white
+                     disabled:opacity-40 disabled:cursor-not-allowed
+                     hover:bg-[#4A96E6] transition"
+                  >
+                    →
+                  </button>
+                </div>
               </div>
-            </div>
           ) : (
-            <div className="rounded-2xl border border-dashed border-[#30363D] bg-[#161B22] p-10 text-center text-[#8B949E]">
-              Panels will be available soon.
-            </div>
+              <div
+                  className="rounded-2xl border border-dashed border-[#30363D] bg-[#161B22] p-10 text-center text-[#8B949E]">
+                Panels will be available soon.
+              </div>
           )}
         </div>
 
         {/* 🚨 수정할 부분: Key Insights 원본 텍스트를 컴포넌트로 전달 */}
         {comic.keyInsights && typeof comic.keyInsights === 'string' && (
-            <KeyInsightsComponent insightsText={comic.keyInsights} />
+            <KeyInsightsComponent insightsText={comic.keyInsights}/>
         )}
 
-        <div className="flex flex-col sm:flex-row gap-3 mb-12">
+        <div className="flex flex-col sm:flex-row gap-3 mb-12 justify-center">
           <a
-            href={comic.repoUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex items-center justify-center gap-2 bg-[#58A6FF] text-white px-6 py-3 rounded-lg hover:bg-[#4A96E6] hover:cursor-pointer transition-colors font-medium"
+              href={comic.repoUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 bg-[#58A6FF] text-white px-6 py-3 rounded-lg hover:bg-[#4A96E6] hover:cursor-pointer transition-colors font-medium"
           >
-            <ExternalLink className="w-5 h-5" />
+            <ExternalLink className="w-5 h-5"/>
             View on GitHub
           </a>
-          <button className="flex items-center justify-center gap-2 bg-[#161B22] text-[#C9D1D9] border border-[#30363D] px-6 py-3 rounded-lg hover:border-[#58A6FF] hover:cursor-pointer transition-colors font-medium">
-            <Download className="w-5 h-5" />
-            Download Comic
-          </button>
         </div>
 
-        <CommentComponent comicId={comic.id} />
+        <CommentComponent comicId={comic.id}/>
 
         {relatedComics.length > 0 && (
-          <div>
-            <h2 className="text-2xl font-bold text-[#C9D1D9] mb-6">
-              More {comic.language} Comics
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {relatedComics.slice(0, 8).map((relatedComic) => (
-                <ComicCard key={relatedComic.id} comic={relatedComic} />
-              ))}
+            <div>
+              <h2 className="text-2xl font-bold text-[#C9D1D9] mb-6">
+                More {comic.language} Comics
+              </h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {relatedComics.slice(0, 8).map((relatedComic) => (
+                    <ComicCard key={relatedComic.id} comic={relatedComic}/>
+                ))}
+              </div>
             </div>
-          </div>
         )}
       </main>
 
-      <ShareModal />
-      <NewsletterModal />
+      <ShareModal/>
+      <NewsletterModal/>
     </div>
   );
 }

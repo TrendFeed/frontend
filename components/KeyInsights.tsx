@@ -1,4 +1,4 @@
-// src/components/KeyInsightsComponent.tsx (수정된 코드)
+// src/components/KeyInsightsComponent.tsx
 
 import { Lightbulb, ChevronsRight } from "lucide-react";
 
@@ -6,88 +6,108 @@ interface KeyInsightsProps {
     insightsText: string;
 }
 
+interface ContentBlock {
+    type: "heading" | "list" | "paragraph";
+    content: string | string[];
+}
+
 /**
  * AI가 생성한 원문 Key Insights 텍스트를 파싱하여 구조화된 형태로 보여주는 컴포넌트
+ * (## 로 시작하는 줄을 제목으로 인식)
  */
 export default function KeyInsightsComponent({ insightsText }: KeyInsightsProps) {
     if (!insightsText || insightsText.trim().length === 0) return null;
 
-const paragraphs = insightsText
-    .split(/\r?\n\s*\r?\n/)
-    .map(p => p.trim())
-    .filter(p => p.length > 0);
+    // 1. 텍스트를 줄 단위로 분리하고 빈 줄 제거
+    const lines = insightsText.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
 
-const structuredContent: { type: "heading" | "list" | "paragraph"; content: string[] | string }[] = [];
+    const structuredContent: ContentBlock[] = [];
+    let currentList: string[] = [];
 
-paragraphs.forEach(paragraph => {
-    const lines = paragraph.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
-    const titleRegex = /^(.*?)\s*[:\u2013\u2014-]\s*/;
-    const titleMatch = lines[0].match(titleRegex);
+    // 리스트 버퍼를 비우는 헬퍼 함수
+    const flushList = () => {
+        if (currentList.length > 0) {
+            structuredContent.push({ type: "list", content: [...currentList] });
+            currentList = [];
+        }
+    };
 
-    if (titleMatch) {
-        const title = titleMatch[1].trim();
-        const restOfLine = lines[0].substring(titleMatch[0].length).trim();
-        structuredContent.push({ type: "heading", content: title });
+    lines.forEach(line => {
+        // Case 1: 제목 (## 으로 시작)
+        if (line.startsWith("##")) {
+            flushList(); // 이전 리스트가 있다면 저장
+            const title = line.replace(/^##\s*/, "").trim(); // ## 제거
+            structuredContent.push({ type: "heading", content: title });
+        }
+        // Case 2: 리스트 아이템 (- 또는 • 으로 시작)
+        else if (line.startsWith("-") || line.startsWith("•")) {
+            const listItem = line.replace(/^[-•]\s*/, "").trim();
+            currentList.push(listItem);
+        }
+        // Case 3: 일반 문단
+        else {
+            flushList(); // 일반 문단이 나오면 이전 리스트는 끝난 것으로 간주
+            structuredContent.push({ type: "paragraph", content: line });
+        }
+    });
 
-        const allContentLines = [restOfLine, ...lines.slice(1)].filter(l => l.length > 0);
-        let currentList: string[] = [];
+    // 루프 종료 후 남은 리스트가 있다면 저장
+    flushList();
 
-        allContentLines.forEach(line => {
-            const trimmed = line.trim();
-            if (trimmed.startsWith('-') || trimmed.startsWith('•')) {
-                currentList.push(trimmed.replace(/^[-\•]\s*/, '').trim());
-            } else {
-                if (currentList.length > 0) {
-                    structuredContent.push({ type: "list", content: currentList });
-                    currentList = [];
-                }
-                structuredContent.push({ type: "paragraph", content: trimmed });
-            }
-        });
+    return (
+        <section className="mb-12 max-w-5xl mx-auto">
+            {/* Header */}
+            <div className="flex items-center gap-2 mb-4">
+                <Lightbulb className="w-5 h-5 text-[#F9A826]" />
+                <h2 className="text-xl font-bold text-[#C9D1D9]">
+                    Key Insights
+                </h2>
+            </div>
 
-        if (currentList.length > 0) structuredContent.push({ type: "list", content: currentList });
-    } else {
-        lines.forEach(line => structuredContent.push({ type: "paragraph", content: line }));
-    }
-});
+            {/* Content */}
+            <div className="space-y-6 border-l border-[#30363D] pl-6">
+                {structuredContent.map((item, idx) => {
+                    switch (item.type) {
+                        case "heading":
+                            return (
+                                <h3
+                                    key={idx}
+                                    className="text-lg font-semibold text-[#58A6FF] mt-8 first:mt-0"
+                                >
+                                    {item.content as string}
+                                </h3>
+                            );
 
-return (
-    <div className="mb-8 max-w-6xl mx-auto bg-[#161B22] border border-[#30363D] rounded-xl p-6 shadow-lg shadow-black/40">
-        <div className="flex items-center gap-3 mb-6 border-b border-[#30363D] pb-3">
-            <Lightbulb className="w-6 h-6 text-[#F9A826]" />
-            <h2 className="text-2xl font-extrabold text-[#C9D1D9]">Deep Dive Insights</h2>
-        </div>
+                        case "paragraph":
+                            return (
+                                <p
+                                    key={idx}
+                                    className="text-[#C9D1D9] text-sm sm:text-base leading-relaxed"
+                                >
+                                    {item.content as string}
+                                </p>
+                            );
 
-        <div className="space-y-5">
-            {structuredContent.map((item, idx) => {
-                switch (item.type) {
-                    case 'heading':
-                        return (
-                            <h3 key={idx} className="text-lg sm:text-xl font-bold text-[#58A6FF] bg-[#1F6FEB]/10 px-4 py-2 rounded-md shadow-sm border-l-4 border-[#58A6FF]">
-                                {item.content as string}
-                            </h3>
-                        );
-                    case 'paragraph':
-                        return (
-                            <p key={idx} className="text-[#C9D1D9] text-sm sm:text-base leading-relaxed">
-                                {item.content as string}
-                            </p>
-                        );
-                    case 'list':
-                        return (
-                            <ul key={idx} className="pl-6 list-disc space-y-2 text-[#C9D1D9]">
-                                {(item.content as string[]).map((li, i) => (
-                                    <li key={i} className="flex items-start gap-2">
-                                        <ChevronsRight className="w-4 h-4 mt-1 text-[#3FB950]" />
-                                        <span>{li}</span>
-                                    </li>
-                                ))}
-                            </ul>
-                        );
-                }
-            })}
-        </div>
-    </div>
-);
+                        case "list":
+                            return (
+                                <ul key={idx} className="space-y-2">
+                                    {(item.content as string[]).map((li, i) => (
+                                        <li
+                                            key={i}
+                                            className="text-[#C9D1D9] text-sm sm:text-base leading-relaxed pl-4 relative"
+                                        >
+                                            <span className="absolute left-0 top-[0.6em] w-1.5 h-1.5 bg-[#3FB950] rounded-full" />
+                                            {li}
+                                        </li>
+                                    ))}
+                                </ul>
+                            );
 
+                        default:
+                            return null;
+                    }
+                })}
+            </div>
+        </section>
+    );
 }

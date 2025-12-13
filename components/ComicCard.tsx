@@ -184,31 +184,59 @@ export default function ComicCard({ comic }: ComicCardProps) {
           {/* 콘텐츠 */}
           <div className="relative z-10 p-5 transition-colors duration-[2200ms] ease-[cubic-bezier(0.22,1,0.36,1)]">
 
-            {/* Title + Language + Category */}
-            <div className="flex items-start justify-between gap-2 mb-3">
-              <h3 className="font-semibold text-[1.05rem] text-gray-100 group-hover/item:text-blue-50 transition-colors duration-[2200ms] ease-[cubic-bezier(0.22,1,0.36,1)]">
-                {comic.title}
-              </h3>
+            {/* Title */}
+            <h3
+                className="
+    mb-3
+    font-semibold
+    text-[1.05rem]
+    leading-snug
+    tracking-tight
+    text-gray-100
+    line-clamp-3
+    group-hover/item:text-blue-50
+    transition-colors duration-[1200ms]
+  "
+            >
+              {comic.title}
+            </h3>
 
-              <div className="flex gap-2 items-center">
-                {/* Language */}
-                <span
-                    className="text-xs bg-[#243447] text-blue-300 font-medium px-3 py-1 rounded-full whitespace-nowrap transition-colors duration-[2200ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/item:bg-blue-600 group-hover/item:text-white"
-                >
-                {comic.language}
-              </span>
+            {/* Meta: Language + Category */}
+            <div className="flex flex-wrap gap-2 mb-4">
+  <span
+      className="
+      text-xs
+      bg-[#243447]
+      text-blue-300
+      font-medium
+      px-3 py-1
+      rounded-full
+      whitespace-nowrap
+      transition-colors
+      group-hover/item:bg-blue-600
+      group-hover/item:text-white
+    "
+  >
+    {comic.language}
+  </span>
 
-                {/* Category */}
-                {comic.category && (
-                    <span
-                        className="text-xs bg-[#19232F] text-blue-300 font-medium px-3 py-1 rounded-full whitespace-nowrap border border-white/10"
-                    >
-                  {comic.category}
-                </span>
-                )}
-              </div>
+              {comic.category && (
+                  <span
+                      className="
+        text-xs
+        bg-[#19232F]
+        text-blue-300
+        font-medium
+        px-3 py-1
+        rounded-full
+        border border-white/10
+        whitespace-nowrap
+      "
+                  >
+      {comic.category}
+    </span>
+              )}
             </div>
-
             {/* Stars */}
             <div className="flex items-center gap-1.5 mb-4">
               <Image

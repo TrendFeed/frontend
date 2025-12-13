@@ -15,6 +15,7 @@ interface ComicsState {
   searchQuery: string;
   loading: boolean;
   pagination: PaginationInfo | null;
+  categoryFilter: string;
   error: string | null;
 }
 
@@ -26,6 +27,7 @@ const initialState: ComicsState = {
   searchQuery: "",
   loading: false,
   pagination: null,
+  categoryFilter: "all",
   error: null,
 };
 
@@ -57,6 +59,9 @@ const comicsSlice = createSlice({
     setError: (state, action: PayloadAction<string | null>) => {
       state.error = action.payload;
     },
+    setCategoryFilter: (state, action: PayloadAction<string>) => {
+      state.categoryFilter = action.payload;
+    },
     updateComicMetrics: (
       state,
       action: PayloadAction<{ id: number; changes: Partial<Comic> }>
@@ -79,6 +84,7 @@ export const {
   setPagination,
   setError,
   updateComicMetrics,
+    setCategoryFilter
 } = comicsSlice.actions;
 
 export default comicsSlice.reducer;
